@@ -226,7 +226,32 @@ impl Engine {
             Action::Brightness(d) => effects.push(Effect::Brightness(*d)),
             Action::Switcher(c) => self.switcher(*c, consumed),
             Action::Key(k) => self.em.tap(*k),
+            Action::Text(t) => self.text(t, consumed),
             Action::None | Action::FnLockToggle | Action::Lock => {}
+        }
+    }
+
+    /// Types text with the modifiers that triggered it lifted, so apps see plain
+    /// characters rather than Alt+something.
+    ///
+    /// Option+Shift is also the Windows "switch input language" hotkey, which fires when
+    /// one of the two is released with nothing pressed in between; an unassigned key
+    /// before lifting and after restoring keeps it from firing.
+    fn text(&mut self, t: &str, consumed: PhysMods) {
+        let consumed_keys = self.emitted_by(consumed);
+        let to_lift: Vec<Key> =
+            self.em.mods_down().into_iter().filter(|k| consumed_keys.contains(k)).collect();
+        if !to_lift.is_empty() {
+            self.em.vk_tap(crate::keys::vk::MASK);
+        }
+        let lifted: Vec<(Key, u8)> = to_lift.into_iter().map(|k| (k, self.em.lift(k))).collect();
+        self.em.text(t);
+        let restored = !lifted.is_empty();
+        for (k, n) in lifted.into_iter().rev() {
+            self.em.restore(k, n);
+        }
+        if restored {
+            self.em.vk_tap(crate::keys::vk::MASK);
         }
     }
 

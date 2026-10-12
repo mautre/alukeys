@@ -7,6 +7,7 @@
 //! - `volume_up`, `play_pause`, `brightness_down`, `fn_lock`, `lock`, …: special actions.
 //! - `switcher:Alt+Tab`: hold the chord's modifier while the trigger's modifier stays down.
 //! - `vk:0x13`: tap a raw Windows virtual key.
+//! - `text:—`: type these characters (any layout, any app).
 //! - `none`: do nothing.
 //!
 //! Trigger syntax: Apple keycap modifiers plus a key, e.g. `Cmd+Shift+3`, `Fn+Left`, `Opt+Backspace`.
@@ -32,6 +33,7 @@ pub enum Action {
     FnLockToggle,
     Lock,
     Switcher(Chord),
+    Text(String),
 }
 
 const SPECIAL: &[(&str, Action)] = &[
@@ -102,6 +104,13 @@ impl Action {
         if let Some((_, a)) = SPECIAL.iter().find(|(n, _)| n.eq_ignore_ascii_case(t)) {
             return Ok(a.clone());
         }
+        if let Some(rest) = s.trim_start().strip_prefix("text:") {
+            return if rest.is_empty() {
+                Err("empty text".into())
+            } else {
+                Ok(Action::Text(rest.to_string()))
+            };
+        }
         if let Some(rest) = t.strip_prefix("vk:") {
             let v = u16::from_str_radix(rest.trim().trim_start_matches("0x"), 16)
                 .map_err(|_| format!("bad vk '{t}'"))?;
@@ -137,6 +146,7 @@ impl fmt::Display for Action {
             }
             Action::Vk(v) => write!(f, "vk:0x{v:02X}"),
             Action::Switcher(c) => write!(f, "switcher:{c}"),
+            Action::Text(t) => write!(f, "text:{t}"),
             Action::Brightness(d) => write!(f, "brightness:{d}"),
             _ => f.write_str("none"),
         }

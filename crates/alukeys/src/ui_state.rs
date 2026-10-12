@@ -172,6 +172,9 @@ pub fn trace_line(t: &crate::shared::Trace) -> String {
         .map(|o| match o {
             alukeys_core::Out::Key { key, down } => format!("{key}{}", if *down { "+" } else { "-" }),
             alukeys_core::Out::Vk { vk, down } => format!("vk{vk:02X}{}", if *down { "+" } else { "-" }),
+            alukeys_core::Out::Unicode { unit, down } => {
+                format!("U+{unit:04X}{}", if *down { "+" } else { "-" })
+            }
         })
         .collect();
     format!(
@@ -202,6 +205,7 @@ pub fn trace_json(events: &[crate::shared::Trace]) -> String {
                         json!({ "key": key.name(), "down": down })
                     }
                     alukeys_core::Out::Vk { vk, down } => json!({ "vk": vk, "down": down }),
+                    alukeys_core::Out::Unicode { unit, down } => json!({ "unit": unit, "down": down }),
                 })
                 .collect();
             json!({ "key": t.key.name(), "down": t.down, "mods": mods_list(t.mods), "pass": t.pass, "out": out })

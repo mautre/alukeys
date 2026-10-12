@@ -21,6 +21,9 @@ fn fmt(out: &[Out]) -> String {
         .map(|o| match o {
             Out::Key { key, down } => format!("{key}{}", if *down { "+" } else { "-" }),
             Out::Vk { vk, down } => format!("vk:{vk:02X}{}", if *down { "+" } else { "-" }),
+            Out::Unicode { unit, down } => {
+                format!("'{}'{}", char::from_u32(*unit as u32).unwrap_or('?'), if *down { "+" } else { "-" })
+            }
         })
         .collect::<Vec<_>>()
         .join(" ")
@@ -288,5 +291,39 @@ fn user_rules_and_disabled_groups() {
         &mut e,
         "LWin+ Space+ Space- LWin-",
         &["LCtrl+", "LCtrl- LAlt+ LShift+ LShift- LAlt- LCtrl+", "", "LCtrl-"],
+    );
+}
+
+#[test]
+fn option_types_typography() {
+    let mut e = mac();
+    check(
+        &mut e,
+        "LAlt+ LShift+ Minus+ Minus- LShift- LAlt-",
+        &[
+            "pass",
+            "pass",
+            "vk:E8+ vk:E8- LShift- LAlt- '—'+ '—'- LAlt+ LShift+ vk:E8+ vk:E8-",
+            "",
+            "pass",
+            "pass",
+        ],
+    );
+    check(
+        &mut e,
+        "LAlt+ Minus+ Minus- LAlt-",
+        &["pass", "vk:E8+ vk:E8- LAlt- '–'+ '–'- LAlt+ vk:E8+ vk:E8-", "", "pass"],
+    );
+    // Auto-repeat types again; right Option works too.
+    check(
+        &mut e,
+        "RAlt+ 4+ 4+ 4- RAlt-",
+        &[
+            "pass",
+            "vk:E8+ vk:E8- RAlt- '₽'+ '₽'- RAlt+ vk:E8+ vk:E8-",
+            "vk:E8+ vk:E8- RAlt- '₽'+ '₽'- RAlt+ vk:E8+ vk:E8-",
+            "",
+            "pass",
+        ],
     );
 }

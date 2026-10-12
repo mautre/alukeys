@@ -36,6 +36,7 @@ Built for the Apple Wireless Keyboard A1314 (the aluminium one from the 2009–2
 
   - fn + ⌘ is the Windows key.
   - Every rule can be turned off.
+- **Mac-style typography on ⌥.** Characters are typed in any layout and any app; the set can be changed or turned off: ⌥- –, ⌥⇧- —, ⌥\\ «, ⌥⇧\\ », ⌥4 ₽, ⌥8 •, ⌥⇧8 °, ⌥0 º, ⌥= ≠, ⌥⇧= ±, ⌥; …, ⌥2 ™, ⌥⇧2 €, ⌥[ “, ⌥⇧[ ”, ⌥] ‘, ⌥⇧] ’, ⌥, „, ⌥G ©, ⌥X ×, ⌥/ ÷.
 - **Modifier presets.** Besides "Like a Mac" there are "Like a PC" (⌥ and ⌘ swapped, giving Ctrl | Win | Alt) and "Unchanged".
 - **§ and ` keys.** On ISO keyboards they are swapped back automatically, as macOS does.
 - **Battery.** If the keyboard reports its level, it shows in the tray, with notifications at 20/10/5 %. The A1314 does not on Windows: it only answers a request that the Windows HID driver does not pass through.
@@ -102,6 +103,7 @@ warn_at = [20, 10, 5]
 - `browser_back`, `browser_forward`, `pause`;
 - `fn_lock`, `lock`, `none`;
 - `switcher:Alt+Tab`;
+- `text:—` — type characters;
 - `vk:0x13` — a raw virtual key.
 
 **Trigger modifiers:** `Fn`, `Ctrl`, `Opt`, `Cmd`, `Shift`.

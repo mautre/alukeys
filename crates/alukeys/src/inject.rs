@@ -8,7 +8,7 @@ use std::mem::size_of;
 use alukeys_core::Out;
 use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
     INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_EXTENDEDKEY, KEYEVENTF_KEYUP, KEYEVENTF_SCANCODE,
-    MAPVK_VK_TO_VSC_EX, MapVirtualKeyW, SendInput,
+    KEYEVENTF_UNICODE, MAPVK_VK_TO_VSC_EX, MapVirtualKeyW, SendInput,
 };
 
 /// "ALUK".
@@ -48,6 +48,10 @@ pub fn send(out: &[Out]) {
                     flags |= KEYEVENTF_KEYUP;
                 }
                 key_input(vk, (sc & 0xFF) as u16, flags)
+            }
+            Out::Unicode { unit, down } => {
+                let flags = KEYEVENTF_UNICODE | if down { 0 } else { KEYEVENTF_KEYUP };
+                key_input(0, unit, flags)
             }
         })
         .collect();

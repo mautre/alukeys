@@ -19,6 +19,8 @@ pub enum Out {
     Key { key: Key, down: bool },
     /// Inject by virtual key (media keys, Pause, the menu mask).
     Vk { vk: u16, down: bool },
+    /// Inject a UTF-16 code unit as typed text (KEYEVENTF_UNICODE).
+    Unicode { unit: u16, down: bool },
 }
 
 #[derive(Clone, Copy, Default, Debug)]
@@ -65,6 +67,18 @@ impl Emitter {
             }
         }
         self.out.push(Out::Key { key, down });
+    }
+
+    /// Types text. Counts as a keypress for the Alt/Win menu guard.
+    pub fn text(&mut self, s: &str) {
+        for g in self.guards.values_mut() {
+            g.keys_since = true;
+            g.used = true;
+        }
+        for unit in s.encode_utf16() {
+            self.out.push(Out::Unicode { unit, down: true });
+            self.out.push(Out::Unicode { unit, down: false });
+        }
     }
 
     pub fn vk_tap(&mut self, v: u16) {

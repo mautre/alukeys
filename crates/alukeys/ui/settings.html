@@ -125,14 +125,18 @@ select:focus, input[type=text]:focus { border-bottom: 2px solid var(--accent); }
 .key .main { position: absolute; left: 6px; top: 4px; font-size: 13px; color: var(--text); }
 .key.down .main { color: var(--accent-fg); }
 .key .ru { position: absolute; right: 6px; bottom: 3px; font-size: 12px; color: var(--text2); }
-.key .lg { position: absolute; left: 6px; bottom: 4px; font-size: 10.5px; }
+.key .lg { position: absolute; left: 6px; bottom: 4px; font-size: 10.5px; white-space: nowrap; }
 .key .lg.c { left: 0; right: 0; text-align: center; top: 50%; transform: translateY(-50%); bottom: auto; font-size: 11px; }
 .key .glyph { position: absolute; right: 6px; top: 4px; font-size: 13px; }
 /* A key that does something else on this layer: tinted, with the result in the middle
    and the printed legend small in the corner. */
 .key.mapped { background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--cap); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
-.key .corner { position: absolute; left: 6px; top: 3px; font-size: 10px; color: var(--text3); }
+.key .corner { position: absolute; left: 6px; top: 3px; font-size: 10px; color: var(--text3); white-space: nowrap; }
 .key .res { position: absolute; inset: 0; display: grid; place-items: center; padding: 8px 3px 0; font-size: 11px; font-weight: 600; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.key .res.sym { font-size: 15px; font-weight: 500; }
+.key .shift-sym { position: absolute; right: 5px; top: 3px; font-size: 11px; color: var(--accent); }
+.key.down .shift-sym { color: var(--accent-fg); }
+.key .res.tight { padding: 0 2px; font-size: 9.5px; }
 .key .icon { position: absolute; inset: 0; display: grid; place-items: center; padding-top: 6px; font-size: 13px; color: var(--text); }
 .key.user::after { content: ""; position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
 .arrows { display: grid; grid-template-columns: repeat(3, var(--u)); grid-template-rows: calc(var(--u) / 2 - 1px) calc(var(--u) / 2 - 1px); gap: 2px var(--gap); }
@@ -224,6 +228,7 @@ const STR = {
     pick_key: "Выберите клавишу", pick_key_d: "Щёлкните клавишу на схеме или нажмите её на клавиатуре Apple.",
     current: "Сейчас", by_default: "По умолчанию", normal: "Обычное поведение",
     opt_default: "Как по умолчанию", opt_key: "Другая клавиша", opt_chord: "Сочетание клавиш", opt_action: "Действие", opt_none: "Ничего не делать",
+    opt_text: "Напечатать символ", text_hint: "Любые символы: — « » ₽ ≠. Работает в любой раскладке", symbol: "Символ",
     record_ph: "Нажмите сочетание…", record_hint: "Нажмите нужное сочетание или введите текстом, например Ctrl+Shift+T",
     changed: "изменено", reset: "Сбросить",
     tester_empty: "Нажимайте клавиши — здесь будет видно, что получает Windows.",
@@ -290,6 +295,7 @@ const STR = {
     pick_key: "Choose a key", pick_key_d: "Click a key on the map, or press it on the Apple keyboard.",
     current: "Now", by_default: "Default", normal: "Normal behaviour",
     opt_default: "Default", opt_key: "Another key", opt_chord: "Shortcut", opt_action: "Action", opt_none: "Do nothing",
+    opt_text: "Type a character", text_hint: "Any characters: — « » ₽ ≠. Works with any layout", symbol: "Character",
     record_ph: "Press a shortcut…", record_hint: "Press the shortcut, or type it, e.g. Ctrl+Shift+T",
     changed: "changed", reset: "Reset",
     tester_empty: "Press keys to see what Windows receives.",
@@ -478,23 +484,39 @@ function actionLabel(a) {
   if (act[a]) return act[a];
   if (a.startsWith("switcher:")) return act["switcher:Alt+Tab"] + " (" + chordLabel(a.slice(9)) + ")";
   if (a.startsWith("tap:")) return keyLabel(a.slice(4));
+  if (a.startsWith("text:")) return t("symbol") + " " + a.slice(5);
   if (a.startsWith("vk:")) return "VK " + a.slice(3);
   if (a.includes(",")) return a.split(",").map(x => chordLabel(x.trim())).join(", ");
   return chordLabel(a);
 }
+const SHORT = {
+  ru: { "switcher:Alt+Tab": "Окна", "Alt+F4": "Закрыть", "tap:LWin": "Пуск", "Win+Space": "Язык", "Win+Tab": "Задачи",
+    "Ctrl+Left": "← слово", "Ctrl+Right": "слово →", "Ctrl+Backspace": "⌫ слово", "Ctrl+Delete": "слово ⌦",
+    "Shift+Home, Backspace": "⌫ строку", "tap:Home": "Home", "tap:End": "End", "Ctrl+Home": "Начало", "Ctrl+End": "Конец",
+    "Win+Down": "Свернуть", "Ctrl+Y": "Повтор", "Alt+Left": "Назад", "Alt+Right": "Вперёд", "Win+Shift+S": "Скрин",
+    "tap:PrintScreen": "PrtSc", "Win+Shift+R": "Запись", "Ctrl+Shift+Esc": "Диспетч.", "Win+Ctrl+Left": "← стол",
+    "Win+Ctrl+Right": "стол →", lock: "Блок.", fn_lock: "fn-lock", none: "—" },
+  en: { "switcher:Alt+Tab": "Windows", "Alt+F4": "Close", "tap:LWin": "Start", "Win+Space": "Lang", "Win+Tab": "Tasks",
+    "Ctrl+Left": "← word", "Ctrl+Right": "word →", "Ctrl+Backspace": "⌫ word", "Ctrl+Delete": "word ⌦",
+    "Shift+Home, Backspace": "⌫ line", "tap:Home": "Home", "tap:End": "End", "Ctrl+Home": "Top", "Ctrl+End": "Bottom",
+    "Win+Down": "Minimize", "Ctrl+Y": "Redo", "Alt+Left": "Back", "Alt+Right": "Forward", "Win+Shift+S": "Snip",
+    "tap:PrintScreen": "PrtSc", "Win+Shift+R": "Record", "Ctrl+Shift+Esc": "Tasks", "Win+Ctrl+Left": "← desk",
+    "Win+Ctrl+Right": "desk →", lock: "Lock", fn_lock: "fn-lock", none: "—" },
+};
 function shortLabel(a) {
   if (a == null) return "";
   const map = { volume_up: "Vol+", volume_down: "Vol−", mute: "Mute", play_pause: "▶‖", next_track: "▶▶", prev_track: "◀◀",
-    brightness_up: "☼+", brightness_down: "☼−", fn_lock: "fn🔒", lock: "Lock", none: "—", "tap:LWin": "Start",
-    "Win+Tab": "Tasks", pause: "Pause", media_stop: "Stop" };
+    brightness_up: "☼+", brightness_down: "☼−", pause: "Pause", media_stop: "Stop" };
+  const loc = (SHORT[LANG] || SHORT.en)[a];
+  if (loc) return loc;
   if (map[a]) return map[a];
+  if (a.startsWith("text:")) return a.slice(5);
   if (a.startsWith("switcher:")) return a.slice(9);
   if (a.startsWith("tap:")) return keyLabel(a.slice(4));
   if (/^[A-Za-z0-9]+$/.test(a)) return keyLabel(a);
-  return a.replace(/\bShift\b/g, "⇧");
+  return a.replace(/\bShift\b/g, "⇧").replace(/\bCtrl\b/g, "Ctrl");
 }
 
-/** Characters a key types (through the base remap), per installed layout. */
 /** Characters a key types in each installed layout. */
 function charsFor(name) {
   const res = [];
@@ -515,6 +537,7 @@ function render() {
   const fn = { keyboard: pageKeyboard, layout: pageLayout, shortcuts: pageShortcuts, toprow: pageTopRow, options: pageOptions, about: pageAbout }[page];
   const keepScroll = $("main").scrollTop;
   $("main").innerHTML = fn();
+  requestAnimationFrame(fitKeys);
   $("main").scrollTop = keepScroll;
   bind();
   renderWizard();
@@ -625,12 +648,20 @@ function keyCap(k, w, legend, sym, opt) {
   const printed = sym || legend || (CHAR_KEY.test(k) ? charsFor(k).map(c => c.ch.toUpperCase())[0] : null) || keyLabel(k);
   let inner;
   let tint = changed;
-  if (isF(k) && changed && ACT_GLYPH[eff]) {
+  const half = ["Up", "Down", "Left", "Right"].includes(k);
+  if (half && changed) {
+    inner = `<span class="res tight">${esc(shortLabel(eff))}</span>`;
+  } else if (isF(k) && changed && ACT_GLYPH[eff]) {
     // Media legend, as printed on the Apple top row.
     inner = `<span class="corner">${legend}</span><span class="icon ic">${ACT_GLYPH[eff]}</span>`;
     tint = user;
   } else if (changed && CHAR_KEY.test(eff)) {
     inner = charLegend(eff);
+  } else if (changed && eff.startsWith("text:")) {
+    // Typed characters: big, with the Shift variant in the corner like a printed legend.
+    const sh = view === "base" ? null : ruleIn(S.effective, [...LAYER_MODS[view], "Shift"], k);
+    const shText = sh && sh.action.startsWith("text:") ? sh.action.slice(5) : "";
+    inner = `<span class="corner">${esc(printed)}</span><span class="res sym">${esc(eff.slice(5))}</span>${shText ? `<span class="shift-sym">${esc(shText)}</span>` : ""}`;
   } else if (changed) {
     inner = `<span class="corner">${esc(printed)}</span><span class="res">${esc(shortLabel(eff))}</span>`;
   } else if (legend !== undefined) {
@@ -641,6 +672,21 @@ function keyCap(k, w, legend, sym, opt) {
   const cls = ["key", isF(k) || k === "Esc" || k === "Eject" ? "short" : "", tint ? "mapped" : "", user ? "user" : "",
     selected === k ? "sel" : "", physDown.has(k) ? "down" : ""].join(" ");
   return `<div class="${cls}" data-key="${k}" style="width:${u};${iso}" title="${esc(keyLabel(k))}">${inner}</div>`;
+}
+
+/** Shrinks key labels that overflow their key, down to a readable minimum. */
+function fitKeys() {
+  document.querySelectorAll(".kb .key .res, .kb .key .lg, .kb .key .corner").forEach(el => {
+    el.style.fontSize = "";
+    let size = parseFloat(getComputedStyle(el).fontSize);
+    const box = el.closest(".key");
+    const max = box.clientWidth - 6;
+    const over = () => el.classList.contains("res") ? el.scrollWidth > el.clientWidth : el.getBoundingClientRect().width > max;
+    while (over() && size > 7.5) {
+      size -= 0.5;
+      el.style.fontSize = size + "px";
+    }
+  });
 }
 
 function keyboardHtml() {
@@ -686,7 +732,8 @@ function keyPanel() {
   const trig = (view === "base" ? "" : LAYER_MODS[view].map(m => MOD_SYM[m]).join(" ") + " + ") + keyLabel(k);
   const curText = eff == null ? (view === "base" || view === "fn" ? keyLabel(k) : t("normal") + " (" + chordLabel(normalAction(view, k)) + ")") : actionLabel(eff);
   const defText = def == null ? t("normal") : actionLabel(def);
-  const kind = editMode || (eff == null ? "default" : eff === "none" ? "none" : SPECIAL_ACTIONS.includes(eff) ? "action" : /^[A-Za-z0-9]+$/.test(eff) ? "key" : "chord");
+  const kind = editMode || (eff == null ? "default" : eff === "none" ? "none" : eff.startsWith("text:") ? "text" : SPECIAL_ACTIONS.includes(eff) ? "action" : /^[A-Za-z0-9]+$/.test(eff) ? "key" : "chord");
+  const textVal = eff && eff.startsWith("text:") ? eff.slice(5) : "";
   const keyOpts = TARGET_KEYS.map(x => `<option value="${x}" ${eff === x ? "selected" : ""}>${esc(keyLabel(x))}</option>`).join("");
   const actOpts = SPECIAL_ACTIONS.map(x => `<option value="${x}" ${eff === x ? "selected" : ""}>${esc(actionLabel(x))}</option>`).join("");
   const chordVal = kind === "chord" && eff ? eff : "";
@@ -702,6 +749,8 @@ function keyPanel() {
         ${kind === "chord" ? `<input type="text" data-set="chord" placeholder="${t("record_ph")}" value="${esc(chordVal)}"><div class="muted" style="margin-top:4px">${t("record_hint")}</div>` : ""}</div></label>
       <label class="o"><input type="radio" name="kind" value="action" ${kind === "action" ? "checked" : ""}><div>${t("opt_action")}
         ${kind === "action" ? `<select data-set="action"><option value=""></option>${actOpts}</select>` : ""}</div></label>
+      <label class="o"><input type="radio" name="kind" value="text" ${kind === "text" ? "checked" : ""}><div>${t("opt_text")}
+        ${kind === "text" ? `<input type="text" data-set="text" value="${esc(textVal)}" placeholder="— « » ₽"><div class="muted" style="margin-top:4px">${t("text_hint")}</div>` : ""}</div></label>
       <label class="o"><input type="radio" name="kind" value="none" ${kind === "none" ? "checked" : ""}><div>${t("opt_none")}</div></label>
     </div>
   </div>`;
@@ -961,6 +1010,8 @@ function bindLayout(root) {
   if (ks) ks.onchange = () => ks.value && setAction(view(), selected, ks.value);
   const as = panel.querySelector("[data-set=action]");
   if (as) as.onchange = () => as.value && setAction(view(), selected, as.value);
+  const tx = panel.querySelector("[data-set=text]");
+  if (tx) tx.onchange = () => tx.value && setAction(view(), selected, "text:" + tx.value);
   const ch = panel.querySelector("[data-set=chord]");
   if (ch) recorder(ch, (v) => setAction(view(), selected, v));
 }
@@ -989,7 +1040,7 @@ function recorder(inp, done) {
 
 function refreshLayout() {
   if (page !== "layout") return;
-  const kb = $("#kbcard"); if (kb) kb.innerHTML = keyboardHtml();
+  const kb = $("#kbcard"); if (kb) { kb.innerHTML = keyboardHtml(); fitKeys(); }
   const tabs = $(".layers"); if (tabs) tabs.outerHTML = layerTabs();
   refreshPanel();
   bindIn($("main"));
@@ -1014,6 +1065,10 @@ function onTrace(e) {
   const outs = e.pass ? [{ key: k, down: e.down }] : e.out;
   let produced = null;
   for (const o of outs) {
+    if (o.unit !== undefined) {
+      if (o.down) produced = (produced && produced.length < 4 ? produced : "") + String.fromCharCode(o.unit);
+      continue;
+    }
     if (o.vk !== undefined) {
       if (o.down && o.vk !== 0xE8) produced = actionLabel(VK_NAMES[o.vk] || ("vk:0x" + o.vk.toString(16)));
       continue;
