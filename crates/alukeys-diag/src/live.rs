@@ -145,6 +145,8 @@ pub fn run(apple: &[AppleCollection]) {
         out!("  7) букву B (программа её заблокирует — это тест)");
         out!("  8) fn+Backspace, fn+стрелки");
         out!("  9) подержите fn+B две секунды");
+        out!(" 10) выключите клавиатуру кнопкой питания сбоку, через 5 с включите и подождите,");
+        out!("     пока она подключится (проверка: присылает ли она заряд батареи сама)");
         out!("Потом трижды подряд нажмите Esc (или подождите {SESSION_SECONDS} с).");
         out!("");
 
@@ -251,6 +253,9 @@ unsafe fn on_raw_input(lparam: LPARAM) {
             let total = (hid.dwSizeHid * hid.dwCount) as usize;
             let data = unsafe { std::slice::from_raw_parts(hid.bRawData.as_ptr(), total) };
             let mut line = format!("[{t:10.3} ms] RAWHID {} dev={dev}", hex(data));
+            if data.len() >= 2 && data[0] == 0x47 {
+                line.push_str(&format!("  -> BATTERY raw {} (~{}%)", data[1], data[1] as u32 * 100 / 255));
+            }
             if data.len() >= 2 && data[0] == 0x11 {
                 line.push_str(&format!(
                     "  -> fn={} eject={}",

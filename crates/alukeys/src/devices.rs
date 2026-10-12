@@ -247,6 +247,11 @@ pub fn battery_from_input(pp: &[u8], report: &[u8]) -> Option<u8> {
     (st == HIDP_STATUS_SUCCESS).then(|| scale(value, &caps))
 }
 
+/// Set once every request kind has failed: Windows' HID class driver rejects requests the
+/// descriptor does not declare (the A1314 case), so the level only arrives when the
+/// keyboard sends report 0x47 by itself, which `battery_from_input` handles.
+static BATTERY_REQUESTS_FAIL: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
 /// Where the battery level was last read successfully, so later polls go straight there.
 static BATTERY_ROUTE: std::sync::Mutex<Option<(String, bool, usize)>> = std::sync::Mutex::new(None);
 
@@ -290,6 +295,10 @@ fn request(path: &str, id: u8, feature: bool, len: usize) -> Option<Vec<u8>> {
 /// so several request kinds and lengths are tried on every Apple collection.
 /// Blocking (Bluetooth round trip): call off the hook thread.
 pub fn read_battery(paths: &[String]) -> Option<u8> {
+    use std::sync::atomic::Ordering;
+    if BATTERY_REQUESTS_FAIL.load(Ordering::Relaxed) {
+        return None;
+    }
     let (id, max) = battery_report(paths)?;
     let decode = |buf: &[u8]| {
         let v = *buf.get(1)? as u32;
@@ -318,6 +327,8 @@ pub fn read_battery(paths: &[String]) -> Option<u8> {
             }
         }
     }
+    crate::log!("battery: report {id:02X} cannot be requested; waiting for the keyboard to send it");
+    BATTERY_REQUESTS_FAIL.store(true, Ordering::Relaxed);
     None
 }
 
