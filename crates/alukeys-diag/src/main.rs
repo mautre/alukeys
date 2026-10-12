@@ -24,7 +24,7 @@ fn main() {
     unsafe { SetConsoleOutputCP(65001) };
 
     let path = report::init();
-    println!("AluKeys diag {}", env!("CARGO_PKG_VERSION"));
+    out!("AluKeys diag {} ({})", env!("CARGO_PKG_VERSION"), env!("ALUKEYS_REV"));
     println!("Отчёт пишется в: {}\n", path.display());
 
     report::section("SYSTEM");
