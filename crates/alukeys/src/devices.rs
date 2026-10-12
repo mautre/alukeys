@@ -68,12 +68,16 @@ pub fn preparsed(h: HANDLE) -> Option<Vec<u8>> {
     }
 }
 
-/// Extracts VID/PID from a device path: USB `VID_05AC&PID_0256`, Bluetooth `VID&0205AC_PID&0256`.
+/// Extracts VID/PID from a device path: USB `VID_05AC&PID_0256`, Bluetooth `VID&000205AC_PID&0256`.
 pub fn vid_pid(path: &str) -> Option<(u16, u16)> {
     let up = path.to_ascii_uppercase();
     let vid = match (up.find("VID_"), up.find("VID&")) {
         (Some(i), _) => u16::from_str_radix(up.get(i + 4..i + 8)?, 16).ok()?,
-        (None, Some(i)) => u16::from_str_radix(up.get(i + 6..i + 10)?, 16).ok()?,
+        // Bluetooth: VID&<source><vid>, e.g. VID&000205ac (source 0002); the VID is the last 4 digits.
+        (None, Some(i)) => {
+            let digits: String = up[i + 4..].chars().take_while(|c| c.is_ascii_hexdigit()).collect();
+            u16::from_str_radix(digits.get(digits.len().checked_sub(4)?..)?, 16).ok()?
+        }
         _ => return None,
     };
     let i = up.find("PID_").or_else(|| up.find("PID&"))?;
@@ -301,6 +305,13 @@ mod tests {
     fn parses_paths() {
         assert_eq!(
             vid_pid(r"\\?\HID#{00001124-0000-1000-8000-00805f9b34fb}_VID&0205ac_PID&0256&Col02#8&1"),
+            Some((0x05AC, 0x0256))
+        );
+        // Path as reported by Windows 11 25H2 for an A1314 (from a diagnostic report).
+        assert_eq!(
+            vid_pid(
+                r"\\?\HID#{00001124-0000-1000-8000-00805f9b34fb}_VID&000205ac_PID&0256&Col01#8&25243724&0&0000#{884b96c3-56ef-11d1-bc8c-00a0c91405dd}"
+            ),
             Some((0x05AC, 0x0256))
         );
         assert_eq!(vid_pid(r"\\?\HID#VID_05AC&PID_0250&MI_00#7&2"), Some((0x05AC, 0x0250)));

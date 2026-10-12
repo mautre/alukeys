@@ -20,13 +20,16 @@ pub fn hex(bytes: &[u8]) -> String {
 }
 
 /// Extracts VID/PID from a device interface path. Handles both USB (`VID_05AC&PID_0256`)
-/// and Bluetooth (`VID&0205AC_PID&0256`) spellings.
+/// and Bluetooth (`VID&000205AC_PID&0256`) spellings.
 pub fn vid_pid_from_path(path: &str) -> Option<(u16, u16)> {
     let up = path.to_ascii_uppercase();
     let vid = match (up.find("VID_"), up.find("VID&")) {
         (Some(i), _) => u16::from_str_radix(up.get(i + 4..i + 8)?, 16).ok()?,
-        // VID&02xxxx: two hex digits of vendor-ID source, then the VID itself.
-        (None, Some(i)) => u16::from_str_radix(up.get(i + 6..i + 10)?, 16).ok()?,
+        // Bluetooth: VID&<source><vid>, e.g. VID&000205ac (source 0002); the VID is the last 4 digits.
+        (None, Some(i)) => {
+            let digits: String = up[i + 4..].chars().take_while(|c| c.is_ascii_hexdigit()).collect();
+            u16::from_str_radix(digits.get(digits.len().checked_sub(4)?..)?, 16).ok()?
+        }
         _ => return None,
     };
     let i = up.find("PID_").or_else(|| up.find("PID&"))?;
