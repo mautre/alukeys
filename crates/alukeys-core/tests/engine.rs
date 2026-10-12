@@ -327,3 +327,27 @@ fn option_types_typography() {
         ],
     );
 }
+
+#[test]
+fn guillemets_on_zhe() {
+    let mut e = mac();
+    check(
+        &mut e,
+        "LAlt+ Semicolon+ Semicolon- LAlt-",
+        &["pass", "vk:E8+ vk:E8- LAlt- '«'+ '«'- LAlt+ vk:E8+ vk:E8-", "", "pass"],
+    );
+    check(
+        &mut e,
+        "LAlt+ LShift+ Semicolon+ Semicolon- LShift- LAlt-",
+        &[
+            "pass",
+            "pass",
+            "vk:E8+ vk:E8- LShift- LAlt- '»'+ '»'- LAlt+ LShift+ vk:E8+ vk:E8-",
+            "",
+            "pass",
+            "pass",
+        ],
+    );
+    // The backslash key keeps its normal Alt behaviour.
+    check(&mut e, "LAlt+ Backslash+ Backslash- LAlt-", &["pass", "pass", "pass", "pass"]);
+}
