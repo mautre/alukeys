@@ -237,6 +237,7 @@ const STR = {
     osd: "Индикатор на экране", osd_d: "Плашка внизу экрана при смене яркости, режима верхнего ряда (fn+Esc), паузе и подключении клавиатуры",
     osd_try: "Показать пример",
     battery_warn: "Предупреждать о батарее", battery_warn_d: "Уведомление при заряде (в процентах)",
+    battery_na: "Клавиатура не сообщает заряд. Для Apple Wireless Keyboard это ожидаемо: она отдаёт заряд только по запросу, а Windows такой запрос не пропускает.",
     language: "Язык интерфейса", lang_auto: "Как в Windows",
     only_apple: "Только когда подключена клавиатура Apple", only_apple_d: "Когда её нет, другие клавиатуры работают без изменений",
     iso_swap: "Клавиши ё и §", iso_swap_d: "На ISO-клавиатурах Apple эти клавиши поменяны местами относительно ПК. Исправить, как это делает macOS",
@@ -302,6 +303,7 @@ const STR = {
     osd: "On-screen indicator", osd_d: "A small panel at the bottom of the screen for brightness, top-row mode (fn+Esc), pause and keyboard connection",
     osd_try: "Show example",
     battery_warn: "Battery warnings", battery_warn_d: "Notify at these levels (percent)",
+    battery_na: "The keyboard does not report its battery. Expected for the Apple Wireless Keyboard: it only answers a request that Windows does not pass through.",
     language: "Language", lang_auto: "Same as Windows",
     only_apple: "Only while the Apple keyboard is connected", only_apple_d: "Other keyboards stay untouched when it is away",
     iso_swap: "§ and ` keys", iso_swap_d: "Apple ISO keyboards swap these two keys compared to a PC. Fix it like macOS does",
@@ -805,7 +807,7 @@ function pageOptions() {
       <div class="row"><span class="ic lead"></span><div class="t"><b>${t("osd")}</b><small>${t("osd_d")}</small></div>
         <button class="btn" data-cmd="test_osd">${t("osd_try")}</button>
         <label class="switch"><span>${C.ui.osd ? t("on") : t("off")}</span><input type="checkbox" data-switch="osd" ${C.ui.osd ? "checked" : ""}></label></div>
-      <div class="row"><span class="ic lead"></span><div class="t"><b>${t("battery_warn")}</b><small>${t("battery_warn_d")}</small></div>
+      <div class="row"><span class="ic lead"></span><div class="t"><b>${t("battery_warn")}</b><small>${S.device.connected && S.device.battery == null ? t("battery_na") : t("battery_warn_d")}</small></div>
         <input type="text" data-set-battery value="${esc(C.battery.warn_at.join(", "))}" style="min-width:140px;width:140px"></div>
       ${switchRow("only_apple", "", t("only_apple"), t("only_apple_d"), C.only_with_apple)}
       <div class="row"><span class="ic lead"></span><div class="t"><b>${t("iso_swap")}</b><small>${t("iso_swap_d")}</small></div>

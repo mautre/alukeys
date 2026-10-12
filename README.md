@@ -38,7 +38,7 @@ Built for the Apple Wireless Keyboard A1314 (the aluminium one from the 2009–2
   - Every rule can be turned off.
 - **Modifier presets.** Besides "Like a Mac" there are "Like a PC" (⌥ and ⌘ swapped, giving Ctrl | Win | Alt) and "Unchanged".
 - **§ and ` keys.** On ISO keyboards they are swapped back automatically, as macOS does.
-- **Battery.** The level shows in the tray, with notifications at 20/10/5 %.
+- **Battery.** If the keyboard reports its level, it shows in the tray, with notifications at 20/10/5 %. The A1314 does not on Windows: it only answers a request that the Windows HID driver does not pass through.
 - **Settings window:**
   - a map of your exact keyboard with the characters of your installed layouts;
   - layers (none / fn / ⌘ / ⌥ / ⌃) that follow the modifier you hold;
@@ -112,7 +112,7 @@ One executable, no driver:
 
 - A `WH_KEYBOARD_LL` hook rewrites keystrokes (injected by scan code, so shortcuts work with any layout).
 - The keyboard sends fn and Eject in a separate vendor HID report, which AluKeys reads through Raw Input.
-- The battery level comes from a HID feature report (Battery Strength).
+- The battery level comes from the HID Battery Strength report when the keyboard sends it.
 - The settings window is WebView2. It is created on demand and freed on close, so the background process stays at a few megabytes.
 
 Layout:
