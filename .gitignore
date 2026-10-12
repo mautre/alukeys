@@ -3,3 +3,4 @@
 alukeys-diag-report*.txt
 /dist
 /.claude/
+.DS_Store
