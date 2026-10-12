@@ -1,0 +1,1049 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AluKeys</title>
+<style>
+:root {
+  --bg: #f3f3f3; --nav: #ebebeb; --card: #fbfbfb; --card2: #f6f6f6; --stroke: rgba(0,0,0,.075);
+  --text: #1a1a1a; --text2: #5c5c5c; --text3: #8a8a8a; --accent: #005fb8; --accent-fg: #fff;
+  --accent-soft: rgba(0,95,184,.10); --ok: #0f7b0f; --warn: #9d5d00; --bad: #c42b1c;
+  --cap: linear-gradient(#ffffff, #f1f1f1); --cap-stroke: rgba(0,0,0,.14); --cap-shadow: 0 1px 0 rgba(0,0,0,.18);
+  --body: #d9dadc; --radius: 8px;
+  --font: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --icons: "Segoe Fluent Icons", "Segoe MDL2 Assets";
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #202020; --nav: #1c1c1c; --card: #2b2b2b; --card2: #323232; --stroke: rgba(255,255,255,.07);
+    --text: #ffffff; --text2: #c8c8c8; --text3: #9a9a9a; --accent: #60cdff; --accent-fg: #000;
+    --accent-soft: rgba(96,205,255,.13); --ok: #6ccb5f; --warn: #fce100; --bad: #ff99a4;
+    --cap: linear-gradient(#3a3a3a, #333); --cap-stroke: rgba(255,255,255,.10); --cap-shadow: 0 1px 0 rgba(0,0,0,.6);
+    --body: #161616;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 14px/1.45 var(--font); }
+body { display: flex; overflow: hidden; user-select: none; }
+button, select, input { font: inherit; color: inherit; }
+.ic { font-family: var(--icons); font-style: normal; font-weight: normal; line-height: 1; }
+
+/* Navigation */
+nav { width: 260px; flex: none; padding: 18px 10px; display: flex; flex-direction: column; gap: 2px; background: var(--bg); }
+.brand { display: flex; align-items: center; gap: 12px; padding: 6px 12px 18px; }
+.brand .logo { width: 36px; height: 36px; border-radius: 9px; background: var(--accent); color: var(--accent-fg); display: grid; place-items: center; font-size: 19px; }
+.brand b { font-size: 15px; display: block; }
+.brand small { color: var(--text2); font-size: 12px; }
+nav a { display: flex; align-items: center; gap: 14px; padding: 9px 12px; border-radius: 6px; color: var(--text); text-decoration: none; cursor: default; position: relative; }
+nav a:hover { background: var(--stroke); }
+nav a.on { background: var(--card); }
+nav a.on::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; border-radius: 2px; background: var(--accent); }
+nav a .ic { font-size: 16px; width: 18px; text-align: center; }
+nav .spacer { flex: 1; }
+nav .status { margin: 0 6px; padding: 10px 12px; border-radius: 8px; background: var(--card); border: 1px solid var(--stroke); font-size: 12.5px; color: var(--text2); }
+nav .status b { color: var(--text); font-weight: 600; }
+
+main { flex: 1; overflow-y: auto; padding: 26px 36px 40px 28px; }
+h1 { font-size: 28px; font-weight: 600; margin: 0 0 18px; letter-spacing: -.01em; }
+h2 { font-size: 14px; font-weight: 600; margin: 26px 0 8px; }
+p.lead { color: var(--text2); margin: -8px 0 18px; max-width: 760px; }
+
+/* Cards and rows */
+.card { background: var(--card); border: 1px solid var(--stroke); border-radius: var(--radius); }
+.rows > .row + .row { border-top: 1px solid var(--stroke); }
+.row { display: flex; align-items: center; gap: 16px; padding: 14px 18px; min-height: 64px; }
+.row .ic.lead { font-size: 20px; width: 24px; text-align: center; color: var(--text); }
+.row .t { flex: 1; min-width: 0; }
+.row .t b { font-weight: 400; display: block; }
+.row .t small { color: var(--text2); font-size: 12px; display: block; }
+.stack { display: grid; gap: 4px; }
+
+/* Controls */
+.switch { display: inline-flex; align-items: center; gap: 10px; cursor: default; }
+.switch input { appearance: none; width: 40px; height: 20px; border-radius: 10px; border: 1px solid var(--text2); position: relative; margin: 0; transition: .15s; }
+.switch input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 12px; height: 12px; border-radius: 50%; background: var(--text2); transition: .15s; }
+.switch input:checked { background: var(--accent); border-color: var(--accent); }
+.switch input:checked::after { left: 23px; background: var(--accent-fg); }
+.switch span { min-width: 34px; color: var(--text2); font-size: 13px; }
+select, input[type=text] { background: var(--card2); border: 1px solid var(--stroke); border-bottom-color: var(--text3); border-radius: 5px; padding: 5px 10px; min-width: 200px; outline: none; }
+select:focus, input[type=text]:focus { border-bottom: 2px solid var(--accent); }
+.btn { background: var(--card2); border: 1px solid var(--stroke); border-radius: 5px; padding: 5px 14px; cursor: default; }
+.btn:hover { filter: brightness(.97); }
+.btn.primary { background: var(--accent); color: var(--accent-fg); border-color: transparent; }
+.btn.link { background: none; border: none; color: var(--accent); padding: 4px 6px; }
+.seg { display: inline-flex; background: var(--card2); border: 1px solid var(--stroke); border-radius: 6px; padding: 2px; }
+.seg button { border: none; background: none; padding: 5px 14px; border-radius: 4px; cursor: default; color: var(--text2); }
+.seg button.on { background: var(--card); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.15); }
+.choices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.choice { padding: 14px 16px; border-radius: var(--radius); background: var(--card); border: 1px solid var(--stroke); cursor: default; position: relative; }
+.choice:hover { border-color: var(--text3); }
+.choice.on { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.choice b { display: block; margin-bottom: 2px; }
+.choice small { color: var(--text2); font-size: 12px; display: block; }
+.choice .mini { display: flex; gap: 4px; margin: 10px 0 8px; }
+.choice .mini span { flex: none; border: 1px solid var(--cap-stroke); background: var(--cap); border-radius: 4px; font-size: 10.5px; padding: 3px 6px; color: var(--text2); }
+.choice .mini span.hl { color: var(--accent); border-color: var(--accent); }
+.choice .check { position: absolute; top: 10px; right: 12px; color: var(--accent); display: none; }
+.choice.on .check { display: block; }
+
+.infobar { display: flex; gap: 12px; align-items: center; padding: 10px 14px; border-radius: var(--radius); border: 1px solid var(--stroke); background: var(--card2); margin: 0 0 14px; }
+.infobar .ic { color: var(--accent); font-size: 16px; }
+.infobar.warn .ic { color: var(--warn); }
+.infobar .t { flex: 1; }
+
+/* Device hero */
+.hero { display: flex; gap: 22px; align-items: center; padding: 20px 22px; margin-bottom: 14px; }
+.hero .art { width: 150px; height: 64px; border-radius: 8px; background: var(--body); position: relative; flex: none; box-shadow: inset 0 0 0 1px var(--stroke); }
+.hero .art i { position: absolute; background: var(--cap); border-radius: 2px; box-shadow: 0 0 0 .5px var(--cap-stroke); }
+.hero h3 { margin: 0; font-size: 20px; font-weight: 600; }
+.hero .meta { color: var(--text2); font-size: 13px; margin-top: 2px; }
+.badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 2px 10px; border-radius: 10px; background: var(--card2); border: 1px solid var(--stroke); margin-top: 8px; }
+.badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text3); }
+.badge.ok .dot { background: var(--ok); }
+.battery { display: flex; align-items: center; gap: 10px; margin-left: auto; text-align: right; }
+.battery .bar { width: 46px; height: 20px; border: 1.5px solid var(--text2); border-radius: 4px; padding: 2px; position: relative; }
+.battery .bar::after { content: ""; position: absolute; right: -5px; top: 5px; width: 3px; height: 7px; border-radius: 0 2px 2px 0; background: var(--text2); }
+.battery .bar i { display: block; height: 100%; border-radius: 1.5px; background: var(--ok); }
+.battery .bar i.low { background: var(--bad); }
+.battery b { font-size: 22px; font-weight: 600; }
+
+/* Keyboard */
+.kbwrap { padding: 18px; overflow-x: auto; text-align: center; }
+.layers { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.layers .hint { color: var(--text3); font-size: 12px; }
+.kb { --u: clamp(34px, 3.05vw, 50px); --gap: 5px; background: var(--body); border-radius: 14px; padding: 12px; display: inline-flex; flex-direction: column; gap: var(--gap); box-shadow: inset 0 0 0 1px var(--stroke); }
+.kb .r { display: flex; gap: var(--gap); }
+.key { position: relative; height: var(--u); border-radius: 6px; background: var(--cap); border: 1px solid var(--cap-stroke); box-shadow: var(--cap-shadow); flex: none; cursor: default; padding: 4px 6px; font-size: 11px; color: var(--text2); transition: background .06s, transform .06s; overflow: hidden; }
+.key:hover { border-color: var(--text3); }
+.key.sel { outline: 2px solid var(--accent); outline-offset: 1px; }
+.key.down { background: var(--accent); color: var(--accent-fg); transform: translateY(1px); }
+.key.down .sub, .key.down .ru { color: var(--accent-fg); }
+.key.short { height: calc(var(--u) * .62); }
+.key .main { position: absolute; left: 6px; top: 4px; font-size: 13px; color: var(--text); }
+.key.down .main { color: var(--accent-fg); }
+.key .ru { position: absolute; right: 6px; bottom: 3px; font-size: 12px; color: var(--text2); }
+.key .lg { position: absolute; left: 6px; bottom: 4px; font-size: 10.5px; }
+.key .lg.c { left: 0; right: 0; text-align: center; top: 50%; transform: translateY(-50%); bottom: auto; font-size: 11px; }
+.key .glyph { position: absolute; right: 6px; top: 4px; font-size: 13px; }
+.key .sub { position: absolute; left: 3px; right: 3px; bottom: 2px; text-align: center; font-size: 10px; font-weight: 600; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.key.mapped { box-shadow: var(--cap-shadow), inset 0 -2px 0 var(--accent); }
+.key.user::after { content: ""; position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.key.has-sub .main, .key.has-sub .lg { opacity: .55; }
+.key.has-sub .ru { display: none; }
+.arrows { display: grid; grid-template-columns: repeat(3, var(--u)); grid-template-rows: calc(var(--u) / 2 - 1px) calc(var(--u) / 2 - 1px); gap: 2px var(--gap); }
+.arrows .key { height: auto; }
+.arrows .key .lg.c { font-size: 10px; }
+
+.editor { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 14px; align-items: start; }
+@media (max-width: 1420px) { .editor { grid-template-columns: minmax(0, 1fr); } .editor #panel { max-width: 640px; } }
+.panel { padding: 16px 18px; }
+.panel h3 { margin: 0 0 2px; font-size: 16px; font-weight: 600; }
+.panel .muted { color: var(--text2); font-size: 12.5px; }
+.panel .cur { margin: 12px 0; padding: 10px 12px; border-radius: 6px; background: var(--card2); }
+.panel .cur small { display: block; color: var(--text3); font-size: 11.5px; }
+.panel .cur b { font-size: 15px; font-weight: 600; }
+.panel .opts { display: grid; gap: 8px; margin-top: 8px; }
+.panel label.o { display: grid; grid-template-columns: 20px 1fr; gap: 8px; align-items: start; padding: 6px 4px; border-radius: 5px; }
+.panel label.o:hover { background: var(--stroke); }
+.panel label.o input { margin-top: 3px; accent-color: var(--accent); }
+.panel label.o select, .panel label.o input[type=text] { margin-top: 6px; width: 100%; min-width: 0; }
+.panel .actions { display: flex; gap: 8px; margin-top: 12px; }
+
+.tester { margin-top: 14px; padding: 12px 16px; display: flex; gap: 14px; align-items: center; min-height: 56px; }
+.tester .ic { font-size: 18px; color: var(--text2); }
+.tester .log { display: flex; gap: 8px; flex-wrap: wrap; flex: 1; }
+.tester .ev { display: inline-flex; gap: 6px; align-items: center; background: var(--card2); border: 1px solid var(--stroke); border-radius: 6px; padding: 3px 9px; font-size: 12.5px; animation: pop .18s ease-out; }
+.tester .ev .arrow { color: var(--text3); }
+.tester .ev b { font-weight: 600; color: var(--accent); }
+.tester .ev.same b { color: var(--text); }
+.tester .empty { color: var(--text3); }
+@keyframes pop { from { transform: scale(.94); opacity: .3; } }
+kbd { font: inherit; }
+
+/* Tables */
+table.grid { width: 100%; border-collapse: collapse; }
+table.grid td { padding: 10px 14px; border-top: 1px solid var(--stroke); vertical-align: middle; }
+table.grid tr:first-child td { border-top: none; }
+table.grid td.k { width: 1%; white-space: nowrap; }
+.chip { display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 26px; padding: 0 8px; border-radius: 5px; border: 1px solid var(--cap-stroke); background: var(--cap); font-size: 12px; box-shadow: var(--cap-shadow); }
+.chips { display: inline-flex; gap: 4px; align-items: center; }
+.modchips button { border: 1px solid var(--stroke); background: var(--card2); border-radius: 5px; padding: 3px 9px; cursor: default; color: var(--text2); }
+.modchips button.on { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.changed { font-size: 11px; color: var(--accent); margin-left: 6px; }
+
+/* Wizard */
+#wizard { position: fixed; inset: 0; background: var(--bg); display: none; z-index: 10; }
+#wizard.show { display: flex; }
+#wizard .wz { margin: auto; width: min(860px, 92vw); }
+#wizard .steps { display: flex; gap: 6px; margin-bottom: 26px; }
+#wizard .steps i { flex: 1; height: 3px; border-radius: 2px; background: var(--stroke); }
+#wizard .steps i.on { background: var(--accent); }
+#wizard h1 { font-size: 30px; }
+#wizard .foot { display: flex; justify-content: space-between; align-items: center; margin-top: 26px; }
+.check-item { display: flex; align-items: center; gap: 14px; padding: 14px 18px; }
+.check-item .st { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--text3); display: grid; place-items: center; font-size: 12px; flex: none; }
+.check-item.done .st { background: var(--ok); border-color: var(--ok); color: #fff; }
+.check-item.done .t small { color: var(--ok); }
+.big-kbd { display: inline-flex; gap: 6px; }
+</style>
+</head>
+<body>
+<nav id="nav"></nav>
+<main id="main"></main>
+<div id="wizard"></div>
+<script>
+"use strict";
+const START = "__START_PAGE__".startsWith("__") ? "keyboard" : "__START_PAGE__";
+
+/* ---------- i18n ---------- */
+const STR = {
+  ru: {
+    nav_keyboard: "Клавиатура", nav_layout: "Раскладка", nav_shortcuts: "Сочетания", nav_toprow: "Верхний ряд",
+    nav_options: "Параметры", nav_about: "О программе",
+    connected: "Подключена", not_connected: "Не подключена", battery: "Батарея",
+    no_kb_title: "Клавиатура Apple не найдена", no_kb_text: "Включите клавиатуру и подключите её в параметрах Bluetooth. Программа подхватит её автоматически.",
+    open_bt: "Параметры Bluetooth",
+    paused: "Пауза", paused_d: "Временно отключить все переназначения, например для игр",
+    toprow: "Верхний ряд", toprow_d: "Что делают F1–F12 без fn. fn + Esc переключает режим на ходу.",
+    media: "Медиаклавиши", fkeys: "F1–F12",
+    mods_title: "Модификаторы", mods_lead: "Как работают ⌘ Command, ⌥ Option и ⌃ Control.",
+    preset_mac: "Как на Mac", preset_mac_d: "⌘ работает как Ctrl: ⌘C, ⌘V, ⌘Tab, ⌘Q — руки помнят. Привычные сочетания macOS переведены на Windows.",
+    preset_pc: "Как на ПК", preset_pc_d: "⌥ и ⌘ меняются местами, получается порядок Ctrl | Win | Alt, как у обычной клавиатуры.",
+    preset_asis: "Без изменений", preset_asis_d: "Модификаторы как есть (⌥ = Alt, ⌘ = Win). Работают только fn, Eject и верхний ряд.",
+    autostart: "Запуск вместе с Windows", auto_off: "Не запускать", auto_normal: "Обычный", auto_elevated: "С правами администратора",
+    auto_d: "С правами администратора переназначения работают и в окнах администратора (Диспетчер задач, терминал). Windows спросит разрешение один раз.",
+    not_elevated: "Сейчас программа запущена без прав администратора: в окнах администратора клавиши работают как обычно.",
+    restart_admin: "Перезапустить",
+    layer_base: "Без модификатора", layer_fn: "С fn", layer_cmd: "С ⌘ Command", layer_opt: "С ⌥ Option", layer_ctrl: "С ⌃ Control",
+    layer_hint: "Зажмите fn или ⌘ на клавиатуре — слой переключится сам.",
+    pick_key: "Выберите клавишу", pick_key_d: "Щёлкните клавишу на схеме или нажмите её на клавиатуре Apple.",
+    current: "Сейчас", by_default: "По умолчанию", normal: "Обычное поведение",
+    opt_default: "Как по умолчанию", opt_key: "Другая клавиша", opt_chord: "Сочетание клавиш", opt_action: "Действие", opt_none: "Ничего не делать",
+    record_ph: "Нажмите сочетание…", record_hint: "Нажмите нужное сочетание или введите текстом, например Ctrl+Shift+T",
+    changed: "изменено", reset: "Сбросить",
+    tester_empty: "Нажимайте клавиши — здесь будет видно, что получает Windows.",
+    you_pressed: "→",
+    shortcuts_lead: "Сочетания macOS, переведённые на Windows. Отключите те, что мешают.",
+    my_shortcuts: "Мои сочетания", add: "Добавить сочетание", trigger: "Нажатие", action: "Действие", del: "Удалить",
+    no_user_rules: "Своих сочетаний пока нет. Добавьте, например, ⌘+⇧+T → Ctrl+Shift+T.",
+    toprow_lead: "Действия клавиш верхнего ряда. С fn клавиши работают наоборот.",
+    fn_with_mods: "С модификаторами всегда F1–F12", fn_with_mods_d: "Alt+F4, Ctrl+F5, Shift+F10 работают без fn",
+    fkey_self: "F-клавиша (без действия)",
+    osd: "Индикатор на экране", osd_d: "Показывать яркость, режим верхнего ряда и паузу",
+    battery_warn: "Предупреждать о батарее", battery_warn_d: "Уведомление при заряде (в процентах)",
+    language: "Язык интерфейса", lang_auto: "Как в Windows",
+    only_apple: "Только когда подключена клавиатура Apple", only_apple_d: "Когда её нет, другие клавиатуры работают без изменений",
+    iso_swap: "Клавиши ё и §", iso_swap_d: "На ISO-клавиатурах Apple эти клавиши поменяны местами относительно ПК. Исправить, как это делает macOS",
+    iso_auto: "Автоматически", on: "Вкл.", off: "Выкл.",
+    about_lead: "Свободная программа для клавиатур Apple в Windows. Без подписки и телеметрии.",
+    open_folder: "Открыть папку настроек", edit_file: "Открыть файл настроек", reset_all: "Сбросить все настройки", reset_confirm: "Сбросить все настройки к значениям по умолчанию?",
+    license: "Лицензия MIT", config_file: "Файл настроек",
+    errors: "В настройках есть ошибки",
+    wz_welcome: "Добро пожаловать", wz_welcome_d: "Настроим клавиатуру Apple за минуту. Всё можно поменять позже.",
+    wz_found: "Найдена клавиатура", wz_mods: "Как вы привыкли нажимать сочетания?", wz_top: "Что делает верхний ряд?",
+    wz_top_media_d: "Яркость, музыка и громкость, как на Mac. Для F1–F12 зажмите fn.",
+    wz_top_fkeys_d: "Обычные F1–F12. Для медиа зажмите fn.",
+    wz_auto: "Запускать вместе с Windows?", wz_auto_d: "Рекомендуем с правами администратора: так клавиши работают во всех окнах.",
+    wz_check: "Проверим клавиатуру", wz_check_d: "Нажмите клавиши ниже на клавиатуре Apple.",
+    wz_press_fn: "Нажмите fn", wz_press_eject: "Нажмите ⏏ Eject", wz_press_combo: "Нажмите ⌘ + C",
+    wz_ok: "Работает", wz_done: "Готово", wz_done_d: "AluKeys работает в фоне. Иконка в трее — настройки по щелчку, меню по правой кнопке.",
+    back: "Назад", next: "Далее", skip: "Пропустить", finish: "Начать работу",
+    act: {
+      none: "Ничего", fn_lock: "Переключить fn-lock", lock: "Заблокировать компьютер",
+      brightness_up: "Ярче", brightness_down: "Темнее", volume_up: "Громче", volume_down: "Тише", mute: "Без звука",
+      play_pause: "Пуск/пауза", next_track: "Следующий трек", prev_track: "Предыдущий трек", media_stop: "Стоп",
+      browser_back: "Назад (браузер)", browser_forward: "Вперёд (браузер)", pause: "Pause/Break",
+      "tap:LWin": "Меню «Пуск»", "Win+Tab": "Представление задач", "Win+D": "Показать рабочий стол",
+      "Win+Shift+S": "Скриншот области", "tap:PrintScreen": "Снимок экрана", "Win+V": "Журнал буфера обмена",
+      "Win+Period": "Эмодзи", "Win+E": "Проводник", "Win+A": "Быстрые настройки", "Win+N": "Уведомления",
+      "Win+Space": "Сменить язык ввода", "Alt+LShift": "Сменить язык (Alt+Shift)", "Ctrl+Shift+Esc": "Диспетчер задач",
+      "Win+L": "Заблокировать (Win+L)", "Win+Shift+R": "Запись экрана",
+      "switcher:Alt+Tab": "Переключение окон",
+    },
+  },
+  en: {
+    nav_keyboard: "Keyboard", nav_layout: "Layout", nav_shortcuts: "Shortcuts", nav_toprow: "Top row",
+    nav_options: "Options", nav_about: "About",
+    connected: "Connected", not_connected: "Not connected", battery: "Battery",
+    no_kb_title: "No Apple keyboard found", no_kb_text: "Turn the keyboard on and pair it in Bluetooth settings. AluKeys picks it up automatically.",
+    open_bt: "Bluetooth settings",
+    paused: "Pause", paused_d: "Turn all remapping off for a while, e.g. for games",
+    toprow: "Top row", toprow_d: "What F1–F12 do without fn. fn + Esc switches on the fly.",
+    media: "Media keys", fkeys: "F1–F12",
+    mods_title: "Modifier keys", mods_lead: "How ⌘ Command, ⌥ Option and ⌃ Control behave.",
+    preset_mac: "Like a Mac", preset_mac_d: "⌘ acts as Ctrl: ⌘C, ⌘V, ⌘Tab, ⌘Q — muscle memory works. Familiar macOS shortcuts are translated to Windows.",
+    preset_pc: "Like a PC", preset_pc_d: "⌥ and ⌘ swap places for the usual Ctrl | Win | Alt order.",
+    preset_asis: "Unchanged", preset_asis_d: "Modifiers as they are (⌥ = Alt, ⌘ = Win). Only fn, Eject and the top row are handled.",
+    autostart: "Start with Windows", auto_off: "Off", auto_normal: "Normal", auto_elevated: "As administrator",
+    auto_d: "As administrator, remapping also works in admin windows (Task Manager, terminals). Windows asks once.",
+    not_elevated: "AluKeys is running without administrator rights: keys behave normally inside admin windows.",
+    restart_admin: "Restart",
+    layer_base: "No modifier", layer_fn: "With fn", layer_cmd: "With ⌘ Command", layer_opt: "With ⌥ Option", layer_ctrl: "With ⌃ Control",
+    layer_hint: "Hold fn or ⌘ on the keyboard to switch the view.",
+    pick_key: "Choose a key", pick_key_d: "Click a key on the map, or press it on the Apple keyboard.",
+    current: "Now", by_default: "Default", normal: "Normal behaviour",
+    opt_default: "Default", opt_key: "Another key", opt_chord: "Shortcut", opt_action: "Action", opt_none: "Do nothing",
+    record_ph: "Press a shortcut…", record_hint: "Press the shortcut, or type it, e.g. Ctrl+Shift+T",
+    changed: "changed", reset: "Reset",
+    tester_empty: "Press keys to see what Windows receives.",
+    you_pressed: "→",
+    shortcuts_lead: "macOS shortcuts translated to Windows. Turn off any that get in the way.",
+    my_shortcuts: "My shortcuts", add: "Add shortcut", trigger: "Press", action: "Action", del: "Delete",
+    no_user_rules: "No shortcuts of your own yet. Add one, e.g. ⌘+⇧+T → Ctrl+Shift+T.",
+    toprow_lead: "Top row actions. Holding fn swaps the behaviour.",
+    fn_with_mods: "F1–F12 when a modifier is held", fn_with_mods_d: "Alt+F4, Ctrl+F5, Shift+F10 work without fn",
+    fkey_self: "F-key (no action)",
+    osd: "On-screen indicator", osd_d: "Show brightness, top-row mode and pause",
+    battery_warn: "Battery warnings", battery_warn_d: "Notify at these levels (percent)",
+    language: "Language", lang_auto: "Same as Windows",
+    only_apple: "Only while the Apple keyboard is connected", only_apple_d: "Other keyboards stay untouched when it is away",
+    iso_swap: "§ and ` keys", iso_swap_d: "Apple ISO keyboards swap these two keys compared to a PC. Fix it like macOS does",
+    iso_auto: "Automatic", on: "On", off: "Off",
+    about_lead: "Free software for Apple keyboards on Windows. No subscription, no telemetry.",
+    open_folder: "Open settings folder", edit_file: "Open settings file", reset_all: "Reset all settings", reset_confirm: "Reset all settings to defaults?",
+    license: "MIT licence", config_file: "Settings file",
+    errors: "The settings contain errors",
+    wz_welcome: "Welcome", wz_welcome_d: "Let’s set up your Apple keyboard in a minute. Everything can be changed later.",
+    wz_found: "Keyboard found", wz_mods: "How do you press shortcuts?", wz_top: "What should the top row do?",
+    wz_top_media_d: "Brightness, music and volume, like on a Mac. Hold fn for F1–F12.",
+    wz_top_fkeys_d: "Plain F1–F12. Hold fn for media.",
+    wz_auto: "Start with Windows?", wz_auto_d: "We recommend administrator mode so keys work in every window.",
+    wz_check: "Let’s check the keyboard", wz_check_d: "Press these keys on the Apple keyboard.",
+    wz_press_fn: "Press fn", wz_press_eject: "Press ⏏ Eject", wz_press_combo: "Press ⌘ + C",
+    wz_ok: "Works", wz_done: "All set", wz_done_d: "AluKeys runs in the background. Click the tray icon for settings, right-click for the menu.",
+    back: "Back", next: "Next", skip: "Skip", finish: "Get started",
+    act: {
+      none: "Nothing", fn_lock: "Toggle fn lock", lock: "Lock computer",
+      brightness_up: "Brighter", brightness_down: "Dimmer", volume_up: "Volume up", volume_down: "Volume down", mute: "Mute",
+      play_pause: "Play/pause", next_track: "Next track", prev_track: "Previous track", media_stop: "Stop",
+      browser_back: "Back (browser)", browser_forward: "Forward (browser)", pause: "Pause/Break",
+      "tap:LWin": "Start menu", "Win+Tab": "Task view", "Win+D": "Show desktop",
+      "Win+Shift+S": "Screenshot of area", "tap:PrintScreen": "Screenshot", "Win+V": "Clipboard history",
+      "Win+Period": "Emoji", "Win+E": "File Explorer", "Win+A": "Quick settings", "Win+N": "Notifications",
+      "Win+Space": "Switch input language", "Alt+LShift": "Switch language (Alt+Shift)", "Ctrl+Shift+Esc": "Task Manager",
+      "Win+L": "Lock (Win+L)", "Win+Shift+R": "Screen recording",
+      "switcher:Alt+Tab": "Switch windows",
+    },
+  },
+};
+let LANG = "ru";
+const t = (k) => (STR[LANG] && STR[LANG][k]) ?? STR.en[k] ?? k;
+
+/* ---------- Key vocabulary ---------- */
+const MOD_SYM = { Fn: "fn", Ctrl: "⌃", Opt: "⌥", Cmd: "⌘", Shift: "⇧" };
+const KEY_LABEL = {
+  Esc: "Esc", Backspace: "Backspace", Tab: "Tab", Enter: "Enter", CapsLock: "Caps Lock", Space: "Space",
+  LCtrl: "Ctrl", RCtrl: "Ctrl (правый)", LAlt: "Alt", RAlt: "AltGr", LShift: "Shift", RShift: "Shift (правый)", LWin: "Win", RWin: "Win (правый)",
+  Left: "←", Right: "→", Up: "↑", Down: "↓", Home: "Home", End: "End", PageUp: "PgUp", PageDown: "PgDn",
+  Insert: "Insert", Delete: "Delete", PrintScreen: "PrtSc", ScrollLock: "ScrLk", Menu: "Menu",
+  Grave: "`", IntlBackslash: "§", Minus: "-", Equal: "=", LBracket: "[", RBracket: "]", Backslash: "\\",
+  Semicolon: ";", Quote: "'", Comma: ",", Period: ".", Slash: "/", Eject: "⏏ Eject", Fn: "fn",
+};
+const ACT_GLYPH = {
+  brightness_down: "", brightness_up: "", "Win+Tab": "", "tap:LWin": "",
+  prev_track: "", play_pause: "", next_track: "", mute: "", volume_down: "", volume_up: "",
+  lock: "", fn_lock: "", "Win+Shift+S": "", "tap:PrintScreen": "",
+};
+const SPECIAL_ACTIONS = [
+  "volume_up", "volume_down", "mute", "play_pause", "next_track", "prev_track", "media_stop",
+  "brightness_up", "brightness_down", "tap:LWin", "Win+Tab", "Win+D", "Win+E", "Win+A", "Win+N", "Win+V", "Win+Period",
+  "Win+Shift+S", "tap:PrintScreen", "Win+Shift+R", "Win+Space", "Alt+LShift", "Ctrl+Shift+Esc",
+  "browser_back", "browser_forward", "pause", "fn_lock", "lock",
+];
+const TARGET_KEYS = [
+  "Esc", "Tab", "CapsLock", "Backspace", "Enter", "Space", "Delete", "Insert", "Home", "End", "PageUp", "PageDown",
+  "Left", "Right", "Up", "Down", "PrintScreen", "ScrollLock", "Menu",
+  "LCtrl", "RCtrl", "LShift", "RShift", "LAlt", "RAlt", "LWin", "RWin",
+  "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "F13", "F14", "F15", "F16", "F17", "F18", "F19",
+  "Grave", "IntlBackslash", "Minus", "Equal", "LBracket", "RBracket", "Backslash", "Semicolon", "Quote", "Comma", "Period", "Slash",
+  ..."1234567890".split(""), ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
+];
+const CODE_TO_KEY = {
+  Escape: "Esc", Backquote: "Grave", Minus: "Minus", Equal: "Equal", Backspace: "Backspace", Tab: "Tab",
+  BracketLeft: "LBracket", BracketRight: "RBracket", Backslash: "Backslash", Enter: "Enter", CapsLock: "CapsLock",
+  Semicolon: "Semicolon", Quote: "Quote", IntlBackslash: "IntlBackslash", Comma: "Comma", Period: "Period", Slash: "Slash",
+  Space: "Space", ArrowLeft: "Left", ArrowRight: "Right", ArrowUp: "Up", ArrowDown: "Down", Home: "Home", End: "End",
+  PageUp: "PageUp", PageDown: "PageDown", Insert: "Insert", Delete: "Delete", PrintScreen: "PrintScreen",
+  ScrollLock: "ScrollLock", ContextMenu: "Menu", NumpadEnter: "NumEnter",
+};
+function codeToKey(code) {
+  if (CODE_TO_KEY[code]) return CODE_TO_KEY[code];
+  let m;
+  if ((m = code.match(/^Key([A-Z])$/))) return m[1];
+  if ((m = code.match(/^Digit(\d)$/))) return m[1];
+  if ((m = code.match(/^F(\d+)$/))) return code;
+  if ((m = code.match(/^Numpad(\d)$/))) return "Num" + m[1];
+  return null;
+}
+
+/* ---------- Keyboard geometry (Apple Wireless Keyboard, compact) ---------- */
+// [key, width in u, legend, options]
+const FROW = [["Esc", 1.5, "esc"], ...[1,2,3,4,5,6,7,8,9,10,11,12].map(n => ["F" + n, 1, "F" + n]), ["Eject", 1.5, "⏏"]];
+function geometry(variant) {
+  const num = [["1"], ["2"], ["3"], ["4"], ["5"], ["6"], ["7"], ["8"], ["9"], ["0"], ["Minus"], ["Equal"]].map(([k]) => [k, 1]);
+  const bottom = [["Fn", 1, "fn"], ["LCtrl", 1.1, "control", "⌃"], ["LAlt", 1.1, "option", "⌥"], ["LWin", 1.35, "command", "⌘"],
+    ["Space", 5.4, ""], ["RWin", 1.35, "command", "⌘"], ["RAlt", 1.1, "option", "⌥"]];
+  if (variant === "ansi") {
+    return [FROW,
+      [["Grave", 1], ...num, ["Backspace", 2, "delete", "⌫"]],
+      [["Tab", 1.5, "tab", "⇥"], ..."QWERTYUIOP".split("").map(k => [k, 1]), ["LBracket", 1], ["RBracket", 1], ["Backslash", 1.5]],
+      [["CapsLock", 1.8, "caps lock", "⇪"], ..."ASDFGHJKL".split("").map(k => [k, 1]), ["Semicolon", 1], ["Quote", 1], ["Enter", 2.2, "return", "↩"]],
+      [["LShift", 2.35, "shift", "⇧"], ..."ZXCVBNM".split("").map(k => [k, 1]), ["Comma", 1], ["Period", 1], ["Slash", 1], ["RShift", 2.65, "shift", "⇧"]],
+      bottom];
+  }
+  // ISO: the key left of 1 reports IntlBackslash and the key next to left Shift reports Grave.
+  return [FROW,
+    [["IntlBackslash", 1], ...num, ["Backspace", 2, "delete", "⌫"]],
+    [["Tab", 1.8, "tab", "⇥"], ..."QWERTYUIOP".split("").map(k => [k, 1]), ["LBracket", 1], ["RBracket", 1], ["Enter", 1.2, "return", "↩", { iso: true }]],
+    [["CapsLock", 1.8, "caps lock", "⇪"], ..."ASDFGHJKL".split("").map(k => [k, 1]), ["Semicolon", 1], ["Quote", 1], ["Backslash", 1], ["EnterTail", 1.2]],
+    [["LShift", 1.35, "shift", "⇧"], ["Grave", 1], ..."ZXCVBNM".split("").map(k => [k, 1]), ["Comma", 1], ["Period", 1], ["Slash", 1], ["RShift", 2.65, "shift", "⇧"]],
+    bottom];
+}
+
+/* ---------- State ---------- */
+let S = null;          // last state from the app
+let C = null;          // draft config
+let page = START === "wizard" ? "keyboard" : START;
+let layer = "base";
+let layerAuto = null;  // layer forced by physically held modifier
+let selected = null;   // selected key name
+let editMode = null;   // radio selection in the key panel
+const physDown = new Set();
+const logical = new Set();
+const events = [];
+let wizardStep = START === "wizard" ? 0 : -1;
+const wizardChecks = { fn: false, eject: false, combo: false };
+
+function send(msg) { if (window.ipc) window.ipc.postMessage(JSON.stringify(msg)); }
+let commitTimer = null;
+function commit() {
+  clearTimeout(commitTimer);
+  commitTimer = setTimeout(() => send({ cmd: "set_config", config: C }), 120);
+}
+const clone = (o) => JSON.parse(JSON.stringify(o));
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const $ = (sel, root = document) => root.querySelector(sel);
+
+window.__recv = (msg) => {
+  if (msg.type === "state") {
+    S = msg;
+    LANG = msg.lang || "en";
+    document.documentElement.lang = LANG;
+    C = clone(msg.config);
+    render();
+  } else if (msg.type === "trace") {
+    for (const e of msg.events) onTrace(e);
+  }
+};
+
+/* ---------- Tables lookup ---------- */
+const sameMods = (a, b) => a.length === b.length && a.every(x => b.includes(x));
+function ruleIn(tables, mods, key) { return tables.rules.find(r => r.key === key && sameMods(r.mods, mods)); }
+const LAYER_MODS = { base: [], fn: ["Fn"], cmd: ["Cmd"], opt: ["Opt"], ctrl: ["Ctrl"] };
+const isF = (k) => /^F([1-9]|1[0-2])$/.test(k);
+
+/** The action string a key performs on a layer (null = acts as itself). */
+function actionOf(tables, lay, key) {
+  if (isF(key) && tables.media[key] && (lay === "base" || lay === "fn")) {
+    const mediaFirst = C.top_row.mode !== "function";
+    const media = (lay === "base") === mediaFirst;
+    return media ? tables.media[key] : null;
+  }
+  if (lay === "base") return tables.remap[key] ?? null;
+  const r = ruleIn(tables, LAYER_MODS[lay], key);
+  return r ? r.action : null;
+}
+
+/* ---------- Pretty printing ---------- */
+function keyLabel(k) {
+  if (!k) return "";
+  if (k === "Space") return LANG === "ru" ? "Пробел" : "Space";
+  return KEY_LABEL[k] ?? k;
+}
+function chordLabel(s) {
+  return s.split("+").map(p => p.trim()).map(p => keyLabel(p)).join(" + ");
+}
+function actionLabel(a) {
+  if (a == null) return "";
+  const act = t("act");
+  if (act[a]) return act[a];
+  if (a.startsWith("switcher:")) return act["switcher:Alt+Tab"] + " (" + chordLabel(a.slice(9)) + ")";
+  if (a.startsWith("tap:")) return keyLabel(a.slice(4));
+  if (a.startsWith("vk:")) return "VK " + a.slice(3);
+  if (a.includes(",")) return a.split(",").map(x => chordLabel(x.trim())).join(", ");
+  return chordLabel(a);
+}
+function shortLabel(a) {
+  if (a == null) return "";
+  const map = { volume_up: "Vol+", volume_down: "Vol−", mute: "Mute", play_pause: "▶‖", next_track: "▶▶", prev_track: "◀◀",
+    brightness_up: "☼+", brightness_down: "☼−", fn_lock: "fn🔒", lock: "Lock", none: "—", "tap:LWin": "Start",
+    "Win+Tab": "Tasks", pause: "Pause", media_stop: "Stop" };
+  if (map[a]) return map[a];
+  if (a.startsWith("switcher:")) return a.slice(9);
+  if (a.startsWith("tap:")) return keyLabel(a.slice(4));
+  if (/^[A-Za-z0-9]+$/.test(a)) return keyLabel(a);
+  return a.replace(/\bShift\b/g, "⇧");
+}
+
+/** Characters a key types (through the base remap), per installed layout. */
+function charsFor(key) {
+  const tgt = (C && S.effective.remap[key]) || key;
+  const name = /^[A-Za-z0-9]+$/.test(tgt) || KEY_LABEL[tgt] !== undefined ? tgt : key;
+  const res = [];
+  for (const l of S.layouts || []) {
+    const v = l.keys[name];
+    if (v && v[0]) res.push({ lang: l.lang, ch: v[0], shift: v[1] });
+  }
+  return res;
+}
+
+/* ---------- Rendering ---------- */
+const NAV = [
+  ["keyboard", ""], ["layout", ""], ["shortcuts", ""], ["toprow", ""], ["options", ""], ["about", ""],
+];
+function render() {
+  if (!S) return;
+  renderNav();
+  const fn = { keyboard: pageKeyboard, layout: pageLayout, shortcuts: pageShortcuts, toprow: pageTopRow, options: pageOptions, about: pageAbout }[page];
+  const keepScroll = $("main").scrollTop;
+  $("main").innerHTML = fn();
+  $("main").scrollTop = keepScroll;
+  bind();
+  renderWizard();
+}
+
+function renderNav() {
+  const d = S.device;
+  const status = d.connected
+    ? `<b>${esc(d.name || "Apple Keyboard")}</b><br>${S.paused ? t("paused") : t("connected")}${d.battery != null ? " · " + d.battery + "%" : ""}`
+    : `<b>${t("not_connected")}</b>`;
+  $("#nav").innerHTML = `
+    <div class="brand"><div class="logo ic"></div><div><b>AluKeys</b><small>${esc(S.version)}</small></div></div>
+    ${NAV.map(([id, ic]) => `<a data-nav="${id}" class="${page === id ? "on" : ""}"><span class="ic">${ic}</span>${t("nav_" + id)}</a>`).join("")}
+    <div class="spacer"></div>
+    <div class="status">${status}</div>`;
+}
+
+function switchRow(id, icon, title, desc, on) {
+  return `<div class="row"><span class="ic lead">${icon}</span><div class="t"><b>${title}</b><small>${desc}</small></div>
+    <label class="switch"><span>${on ? t("on") : t("off")}</span><input type="checkbox" data-switch="${id}" ${on ? "checked" : ""}></label></div>`;
+}
+
+function keyboardArt() {
+  let s = "";
+  for (let r = 0; r < 5; r++) for (let c = 0; c < 13; c++) s += `<i style="left:${6 + c * 10.6}px;top:${6 + r * 10.8}px;width:8.6px;height:${r === 0 ? 5 : 8.6}px"></i>`;
+  s += `<i style="left:${6 + 3 * 10.6}px;top:${6 + 5 * 10.8 - 3}px;width:50px;height:6px"></i>`;
+  return s;
+}
+
+function presetChoices() {
+  const p = C.preset;
+  const card = (id, title, desc, mini) => `<div class="choice ${p === id ? "on" : ""}" data-preset="${id}"><span class="check ic"></span>
+    <b>${title}</b><div class="mini">${mini}</div><small>${desc}</small></div>`;
+  return `<div class="choices">
+    ${card("mac", t("preset_mac"), t("preset_mac_d"), `<span>⌃ Ctrl</span><span>⌥ Alt</span><span class="hl">⌘ Ctrl</span>`)}
+    ${card("pc", t("preset_pc"), t("preset_pc_d"), `<span>⌃ Ctrl</span><span class="hl">⌥ Win</span><span class="hl">⌘ Alt</span>`)}
+    ${card("asis", t("preset_asis"), t("preset_asis_d"), `<span>⌃ Ctrl</span><span>⌥ Alt</span><span>⌘ Win</span>`)}
+  </div>`;
+}
+
+function autostartSeg() {
+  const a = S.autostart;
+  return `<div class="seg" data-seg="autostart">
+    <button data-v="off" class="${a === "off" ? "on" : ""}">${t("auto_off")}</button>
+    <button data-v="normal" class="${a === "normal" ? "on" : ""}">${t("auto_normal")}</button>
+    <button data-v="elevated" class="${a === "elevated" ? "on" : ""}">${t("auto_elevated")}</button></div>`;
+}
+
+function pageKeyboard() {
+  const d = S.device;
+  const variant = d.variant ? d.variant.toUpperCase() : "";
+  const bat = d.battery;
+  const hero = d.connected ? `
+    <div class="card hero">
+      <div class="art">${keyboardArt()}</div>
+      <div><h3>${esc(d.name || "Apple Keyboard")}</h3>
+        <div class="meta">${[variant, "Bluetooth"].filter(Boolean).join(" · ")}</div>
+        <span class="badge ok"><span class="dot"></span>${S.paused ? t("paused") : t("connected")}</span></div>
+      ${bat != null ? `<div class="battery"><div><small class="muted">${t("battery")}</small><br><b>${bat}%</b></div>
+        <div class="bar"><i class="${bat <= 20 ? "low" : ""}" style="width:${Math.max(4, bat)}%"></i></div></div>` : ""}
+    </div>` : `
+    <div class="card hero">
+      <div class="art" style="opacity:.45">${keyboardArt()}</div>
+      <div style="flex:1"><h3>${t("no_kb_title")}</h3><div class="meta">${t("no_kb_text")}</div></div>
+      <button class="btn" data-cmd="open_bt">${t("open_bt")}</button>
+    </div>`;
+  const elevBar = !S.elevated ? `<div class="infobar"><span class="ic"></span><div class="t">${t("not_elevated")}</div>
+      <button class="btn" data-cmd="relaunch_elevated">${t("restart_admin")}</button></div>` : "";
+  const errs = (S.errors && S.errors.length) ? `<div class="infobar warn"><span class="ic"></span><div class="t"><b>${t("errors")}</b><br>${S.errors.map(esc).join("<br>")}</div></div>` : "";
+  return `<h1>${t("nav_keyboard")}</h1>${errs}${hero}
+    <div class="card rows">
+      ${switchRow("paused", "", t("paused"), t("paused_d"), S.paused)}
+      <div class="row"><span class="ic lead"></span><div class="t"><b>${t("toprow")}</b><small>${t("toprow_d")}</small></div>
+        <div class="seg" data-seg="toprow"><button data-v="media" class="${C.top_row.mode === "media" ? "on" : ""}">${t("media")}</button>
+        <button data-v="function" class="${C.top_row.mode === "function" ? "on" : ""}">${t("fkeys")}</button></div></div>
+    </div>
+    <h2>${t("mods_title")}</h2>
+    <p class="lead" style="margin:0 0 10px">${t("mods_lead")}</p>
+    ${presetChoices()}
+    <h2>${t("autostart")}</h2>
+    ${elevBar}
+    <div class="card rows"><div class="row"><span class="ic lead"></span><div class="t"><b>${t("autostart")}</b><small>${t("auto_d")}</small></div>${autostartSeg()}</div></div>`;
+}
+
+/* --- Layout editor --- */
+function keyCap(k, w, legend, sym, opt) {
+  const u = `calc(var(--u) * ${w} + var(--gap) * ${Math.max(0, w - 1)})`;
+  if (k === "EnterTail") return `<div style="width:${u};flex:none"></div>`;
+  const view = layerAuto || layer;
+  const eff = actionOf(S.effective, view, k);
+  const def = actionOf(S.defaults, view, k);
+  const user = JSON.stringify(eff) !== JSON.stringify(def);
+  // The ISO Enter spans two rows without making its row taller.
+  const iso = opt && opt.iso ? "height:calc(var(--u) * 2 + var(--gap));margin-bottom:calc(-1 * (var(--u) + var(--gap)));z-index:1;" : "";
+  let inner;
+  if (isF(k)) {
+    const m = S.effective.media[k];
+    inner = `<span class="lg">${legend}</span>${m && ACT_GLYPH[m] ? `<span class="glyph ic">${ACT_GLYPH[m]}</span>` : ""}`;
+  } else if (legend !== undefined) {
+    inner = sym ? `<span class="glyph">${sym}</span><span class="lg">${legend}</span>` : `<span class="lg c">${legend}</span>`;
+  } else {
+    const ch = charsFor(k);
+    const lat = ch.find(c => c.lang === "en") || ch[0];
+    const cyr = ch.find(c => c.lang !== (lat && lat.lang));
+    const mainCh = lat ? (/^[a-z]$/.test(lat.ch) ? lat.ch.toUpperCase() : lat.ch) : keyLabel(k);
+    inner = `<span class="main">${esc(mainCh)}</span>${cyr ? `<span class="ru">${esc(cyr.ch.toUpperCase() === cyr.ch ? cyr.ch : cyr.ch.toUpperCase())}</span>` : ""}`;
+  }
+  const sub = eff != null && eff !== k ? `<span class="sub">${esc(shortLabel(eff))}</span>` : "";
+  const cls = ["key", isF(k) || k === "Esc" || k === "Eject" ? "short" : "", sub ? "has-sub mapped" : "", user ? "user" : "",
+    selected === k ? "sel" : "", physDown.has(k) ? "down" : ""].join(" ");
+  return `<div class="${cls}" data-key="${k}" style="width:${u};${iso}" title="${esc(keyLabel(k))}">${inner}${sub}</div>`;
+}
+
+function keyboardHtml() {
+  const g = geometry(S.device.variant || (C.iso_swap === "off" ? "ansi" : "iso"));
+  const rows = g.map((row, i) => {
+    let cells = row.map(([k, w, legend, sym, opt]) => keyCap(k, w, legend, sym, opt)).join("");
+    if (i === 5) {
+      cells += `<div class="arrows">
+        <div></div>${keyCap("Up", 1, "▲")}<div></div>
+        ${keyCap("Left", 1, "◀")}${keyCap("Down", 1, "▼")}${keyCap("Right", 1, "▶")}</div>`;
+    }
+    return `<div class="r" style="${i === 5 ? "align-items:flex-end" : ""}">${cells}</div>`;
+  }).join("");
+  return `<div class="kb">${rows}</div>`;
+}
+
+function layerTabs() {
+  const view = layerAuto || layer;
+  const L = [["base", t("layer_base")], ["fn", t("layer_fn")], ["cmd", t("layer_cmd")], ["opt", t("layer_opt")], ["ctrl", t("layer_ctrl")]];
+  return `<div class="layers"><div class="seg" data-seg="layer">${L.map(([id, n]) => `<button data-v="${id}" class="${view === id ? "on" : ""}">${n}</button>`).join("")}</div>
+    <span class="hint">${t("layer_hint")}</span></div>`;
+}
+
+/** Normal output of a key on a layer when no rule applies. */
+function normalAction(lay, key) {
+  if (lay === "base" || lay === "fn") return key;
+  const modKey = { cmd: "LWin", opt: "LAlt", ctrl: "LCtrl" }[lay];
+  const emitted = S.effective.remap[modKey] || modKey;
+  const win = { LCtrl: "Ctrl", RCtrl: "Ctrl", LAlt: "Alt", RAlt: "Alt", LWin: "Win", RWin: "Win", LShift: "Shift" }[emitted] || "Ctrl";
+  return win + "+" + key;
+}
+
+function keyPanel() {
+  if (!selected) {
+    return `<div class="card panel"><h3>${t("pick_key")}</h3><div class="muted">${t("pick_key_d")}</div></div>`;
+  }
+  const view = layerAuto || layer;
+  const k = selected;
+  const eff = actionOf(S.effective, view, k);
+  const def = actionOf(S.defaults, view, k);
+  const user = JSON.stringify(eff) !== JSON.stringify(def);
+  const layerName = { base: t("layer_base"), fn: t("layer_fn"), cmd: t("layer_cmd"), opt: t("layer_opt"), ctrl: t("layer_ctrl") }[view];
+  const trig = (view === "base" ? "" : LAYER_MODS[view].map(m => MOD_SYM[m]).join(" ") + " + ") + keyLabel(k);
+  const curText = eff == null ? (view === "base" || view === "fn" ? keyLabel(k) : t("normal") + " (" + chordLabel(normalAction(view, k)) + ")") : actionLabel(eff);
+  const defText = def == null ? t("normal") : actionLabel(def);
+  const kind = editMode || (eff == null ? "default" : eff === "none" ? "none" : SPECIAL_ACTIONS.includes(eff) ? "action" : /^[A-Za-z0-9]+$/.test(eff) ? "key" : "chord");
+  const keyOpts = TARGET_KEYS.map(x => `<option value="${x}" ${eff === x ? "selected" : ""}>${esc(keyLabel(x))}</option>`).join("");
+  const actOpts = SPECIAL_ACTIONS.map(x => `<option value="${x}" ${eff === x ? "selected" : ""}>${esc(actionLabel(x))}</option>`).join("");
+  const chordVal = kind === "chord" && eff ? eff : "";
+  return `<div class="card panel">
+    <div class="muted">${layerName}</div>
+    <h3>${esc(trig)}</h3>
+    <div class="cur"><small>${t("current")}${user ? ` · <span class="changed">${t("changed")}</span>` : ""}</small><b>${esc(curText)}</b></div>
+    <div class="opts">
+      <label class="o"><input type="radio" name="kind" value="default" ${kind === "default" ? "checked" : ""}><div>${t("opt_default")}<div class="muted">${esc(defText)}</div></div></label>
+      <label class="o"><input type="radio" name="kind" value="key" ${kind === "key" ? "checked" : ""}><div>${t("opt_key")}
+        ${kind === "key" ? `<select data-set="key"><option value=""></option>${keyOpts}</select>` : ""}</div></label>
+      <label class="o"><input type="radio" name="kind" value="chord" ${kind === "chord" ? "checked" : ""}><div>${t("opt_chord")}
+        ${kind === "chord" ? `<input type="text" data-set="chord" placeholder="${t("record_ph")}" value="${esc(chordVal)}"><div class="muted" style="margin-top:4px">${t("record_hint")}</div>` : ""}</div></label>
+      <label class="o"><input type="radio" name="kind" value="action" ${kind === "action" ? "checked" : ""}><div>${t("opt_action")}
+        ${kind === "action" ? `<select data-set="action"><option value=""></option>${actOpts}</select>` : ""}</div></label>
+      <label class="o"><input type="radio" name="kind" value="none" ${kind === "none" ? "checked" : ""}><div>${t("opt_none")}</div></label>
+    </div>
+  </div>`;
+}
+
+function testerHtml() {
+  const evs = events.slice(-7);
+  return `<div class="card tester"><span class="ic"></span><div class="log" id="log">${evs.length ? evs.map(e =>
+    `<span class="ev ${e.same ? "same" : ""}"><span>${esc(e.from)}</span><span class="arrow">${t("you_pressed")}</span><b>${esc(e.to)}</b></span>`).join("")
+    : `<span class="empty">${t("tester_empty")}</span>`}</div></div>`;
+}
+
+function pageLayout() {
+  return `<h1>${t("nav_layout")}</h1>${layerTabs()}
+    <div class="editor"><div><div class="card kbwrap" id="kbcard">${keyboardHtml()}</div><div id="tester">${testerHtml()}</div></div>
+    <div id="panel">${keyPanel()}</div></div>`;
+}
+
+/** Writes an action for (layer, key) into the draft config; null resets to the default. */
+function setAction(view, k, action) {
+  const def = actionOf(S.defaults, view, k);
+  if (isF(k) && (view === "base" || view === "fn") && S.effective.media[k]) {
+    C.top_row.keys = C.top_row.keys || {};
+    const mediaFirst = C.top_row.mode !== "function";
+    const isMediaSide = (view === "base") === mediaFirst;
+    if (isMediaSide) {
+      if (action == null || action === S.defaults.media[k]) delete C.top_row.keys[k];
+      else C.top_row.keys[k] = action;
+      commit();
+      return;
+    }
+  }
+  if (view === "base") {
+    if (action == null || action === def || (def == null && action === k)) delete C.remap[k];
+    else C.remap[k] = action;
+  } else {
+    const mods = LAYER_MODS[view];
+    C.rules = C.rules.filter(r => !(triggerKey(r.trigger) === k && sameMods(triggerMods(r.trigger), mods)));
+    if (action != null && action !== def) {
+      C.rules.push({ trigger: [...mods, k].join("+"), action });
+    }
+  }
+  commit();
+}
+function triggerParts(tr) { return tr.split("+").map(s => s.trim()); }
+function triggerKey(tr) { const p = triggerParts(tr); return p[p.length - 1]; }
+function triggerMods(tr) {
+  const norm = { cmd: "Cmd", command: "Cmd", opt: "Opt", option: "Opt", alt: "Opt", ctrl: "Ctrl", control: "Ctrl", shift: "Shift", fn: "Fn" };
+  return triggerParts(tr).slice(0, -1).map(m => norm[m.toLowerCase()] || m);
+}
+
+/* --- Shortcuts --- */
+function pageShortcuts() {
+  const groups = S.groups.map(g => `<div class="row"><div class="t"><b>${esc(g.title)}</b></div>
+    <label class="switch"><span>${g.enabled ? t("on") : t("off")}</span><input type="checkbox" data-group="${g.id}" ${g.enabled ? "checked" : ""}></label></div>`).join("");
+  const userRows = C.rules.map((r, i) => {
+    const mods = triggerMods(r.trigger);
+    const key = triggerKey(r.trigger);
+    const keyOpts = [...TARGET_KEYS, "Eject"].map(x => `<option value="${x}" ${key === x ? "selected" : ""}>${esc(keyLabel(x))}</option>`).join("");
+    return `<tr><td class="k"><span class="modchips">${["Fn", "Ctrl", "Opt", "Cmd", "Shift"].map(m =>
+      `<button data-rule-mod="${i}" data-m="${m}" class="${mods.includes(m) ? "on" : ""}">${MOD_SYM[m]}</button>`).join(" ")}</span>
+      <select data-rule-key="${i}" style="min-width:110px;margin-left:6px">${keyOpts}</select></td>
+      <td><input type="text" data-rule-action="${i}" value="${esc(r.action)}" placeholder="${t("record_ph")}" style="width:100%">
+      <div class="muted" style="font-size:12px;margin-top:2px">${esc(actionLabel(r.action))}</div></td>
+      <td class="k"><button class="btn link" data-rule-del="${i}">${t("del")}</button></td></tr>`;
+  }).join("");
+  return `<h1>${t("nav_shortcuts")}</h1><p class="lead">${t("shortcuts_lead")}</p>
+    <div class="card rows">${groups}</div>
+    <h2>${t("my_shortcuts")}</h2>
+    <div class="card">${C.rules.length ? `<table class="grid">${userRows}</table>` : `<div class="row"><div class="t"><small>${t("no_user_rules")}</small></div></div>`}</div>
+    <div style="margin-top:10px"><button class="btn" data-cmd="add_rule">+ ${t("add")}</button></div>`;
+}
+
+/* --- Top row --- */
+function pageTopRow() {
+  const rows = [1,2,3,4,5,6,7,8,9,10,11,12].map(n => {
+    const k = "F" + n;
+    const cur = S.effective.media[k] ?? k;
+    const def = S.defaults.media[k] ?? k;
+    const opts = [`<option value="${k}" ${cur === k ? "selected" : ""}>${t("fkey_self")}</option>`,
+      ...SPECIAL_ACTIONS.map(x => `<option value="${x}" ${cur === x ? "selected" : ""}>${esc(actionLabel(x))}</option>`)].join("");
+    return `<tr><td class="k"><span class="chip">F${n}</span></td>
+      <td><span class="ic" style="margin-right:10px;color:var(--text2)">${ACT_GLYPH[cur] || ""}</span>${esc(cur === k ? t("fkey_self") : actionLabel(cur))}
+      ${cur !== def ? `<span class="changed">${t("changed")}</span>` : ""}</td>
+      <td class="k"><select data-media="${k}">${opts}</select></td></tr>`;
+  }).join("");
+  return `<h1>${t("nav_toprow")}</h1><p class="lead">${t("toprow_lead")}</p>
+    <div class="card rows">
+      <div class="row"><span class="ic lead"></span><div class="t"><b>${t("toprow")}</b><small>${t("toprow_d")}</small></div>
+        <div class="seg" data-seg="toprow"><button data-v="media" class="${C.top_row.mode === "media" ? "on" : ""}">${t("media")}</button>
+        <button data-v="function" class="${C.top_row.mode === "function" ? "on" : ""}">${t("fkeys")}</button></div></div>
+      ${switchRow("fnmods", "", t("fn_with_mods"), t("fn_with_mods_d"), C.top_row.function_with_modifiers)}
+    </div>
+    <h2>${t("nav_toprow")}</h2>
+    <div class="card"><table class="grid">${rows}</table></div>`;
+}
+
+/* --- Options --- */
+function pageOptions() {
+  const lang = C.ui.language;
+  return `<h1>${t("nav_options")}</h1>
+    <div class="card rows">
+      ${switchRow("osd", "", t("osd"), t("osd_d"), C.ui.osd)}
+      <div class="row"><span class="ic lead"></span><div class="t"><b>${t("battery_warn")}</b><small>${t("battery_warn_d")}</small></div>
+        <input type="text" data-set-battery value="${esc(C.battery.warn_at.join(", "))}" style="min-width:140px;width:140px"></div>
+      ${switchRow("only_apple", "", t("only_apple"), t("only_apple_d"), C.only_with_apple)}
+      <div class="row"><span class="ic lead"></span><div class="t"><b>${t("iso_swap")}</b><small>${t("iso_swap_d")}</small></div>
+        <div class="seg" data-seg="iso"><button data-v="auto" class="${C.iso_swap === "auto" ? "on" : ""}">${t("iso_auto")}</button>
+        <button data-v="on" class="${C.iso_swap === "on" ? "on" : ""}">${t("on")}</button><button data-v="off" class="${C.iso_swap === "off" ? "on" : ""}">${t("off")}</button></div></div>
+      <div class="row"><span class="ic lead"></span><div class="t"><b>${t("language")}</b></div>
+        <select data-set-lang><option value="auto" ${lang === "auto" ? "selected" : ""}>${t("lang_auto")}</option>
+        <option value="ru" ${lang === "ru" ? "selected" : ""}>Русский</option><option value="en" ${lang === "en" ? "selected" : ""}>English</option></select></div>
+    </div>
+    <h2>${t("autostart")}</h2>
+    <div class="card rows"><div class="row"><span class="ic lead"></span><div class="t"><b>${t("autostart")}</b><small>${t("auto_d")}</small></div>${autostartSeg()}</div></div>`;
+}
+
+function pageAbout() {
+  return `<h1>${t("nav_about")}</h1><p class="lead">${t("about_lead")}</p>
+    <div class="card rows">
+      <div class="row"><span class="ic lead"></span><div class="t"><b>AluKeys ${esc(S.version)}</b><small>${t("license")}</small></div></div>
+      <div class="row"><span class="ic lead"></span><div class="t"><b>${t("config_file")}</b><small>${esc(S.configPath)}</small></div>
+        <button class="btn" data-cmd="edit_file">${t("edit_file")}</button><button class="btn" data-cmd="open_folder">${t("open_folder")}</button></div>
+      <div class="row"><span class="ic lead"></span><div class="t"><b>${t("reset_all")}</b></div><button class="btn" data-cmd="reset_all">${t("reset")}</button></div>
+    </div>`;
+}
+
+/* ---------- Wizard ---------- */
+function renderWizard() {
+  const w = $("#wizard");
+  if (wizardStep < 0) { w.classList.remove("show"); return; }
+  w.classList.add("show");
+  const total = 6;
+  const steps = Array.from({ length: total }, (_, i) => `<i class="${i <= wizardStep ? "on" : ""}"></i>`).join("");
+  const d = S.device;
+  let body = "";
+  if (wizardStep === 0) {
+    body = `<h1>${t("wz_welcome")}</h1><p class="lead">${t("wz_welcome_d")}</p>
+      ${d.connected ? `<div class="card hero"><div class="art">${keyboardArt()}</div><div><div class="muted">${t("wz_found")}</div><h3>${esc(d.name)}</h3>
+        <div class="meta">${[d.variant && d.variant.toUpperCase(), "Bluetooth"].filter(Boolean).join(" · ")}</div></div></div>`
+      : `<div class="card hero"><div class="art" style="opacity:.45">${keyboardArt()}</div><div style="flex:1"><h3>${t("no_kb_title")}</h3><div class="meta">${t("no_kb_text")}</div></div>
+        <button class="btn" data-cmd="open_bt">${t("open_bt")}</button></div>`}`;
+  } else if (wizardStep === 1) {
+    body = `<h1>${t("wz_mods")}</h1><p class="lead">${t("mods_lead")}</p>${presetChoices()}`;
+  } else if (wizardStep === 2) {
+    const m = C.top_row.mode;
+    body = `<h1>${t("wz_top")}</h1><div class="choices" style="grid-template-columns:1fr 1fr">
+      <div class="choice ${m === "media" ? "on" : ""}" data-toprow="media"><span class="check ic"></span><b>${t("media")}</b>
+        <div class="mini"><span class="ic"></span><span class="ic"></span><span class="ic"></span><span class="ic"></span><span class="ic"></span><span class="ic"></span><span class="ic"></span></div><small>${t("wz_top_media_d")}</small></div>
+      <div class="choice ${m === "function" ? "on" : ""}" data-toprow="function"><span class="check ic"></span><b>${t("fkeys")}</b>
+        <div class="mini"><span>F1</span><span>F2</span><span>F3</span><span>…</span><span>F12</span></div><small>${t("wz_top_fkeys_d")}</small></div></div>`;
+  } else if (wizardStep === 3) {
+    body = `<h1>${t("wz_auto")}</h1><p class="lead">${t("wz_auto_d")}</p>${autostartSeg()}`;
+  } else if (wizardStep === 4) {
+    const item = (done, title) => `<div class="check-item ${done ? "done" : ""}"><span class="st">${done ? "✓" : ""}</span><div class="t"><b>${title}</b>${done ? `<small>${t("wz_ok")}</small>` : ""}</div></div>`;
+    body = `<h1>${t("wz_check")}</h1><p class="lead">${t("wz_check_d")}</p><div class="card rows">
+      ${item(wizardChecks.fn, t("wz_press_fn"))}${item(wizardChecks.eject, t("wz_press_eject"))}${C.preset === "mac" ? item(wizardChecks.combo, t("wz_press_combo")) : ""}</div>`;
+  } else {
+    body = `<h1>${t("wz_done")}</h1><p class="lead">${t("wz_done_d")}</p>`;
+  }
+  const last = wizardStep === total - 1;
+  w.innerHTML = `<div class="wz"><div class="steps">${steps}</div>${body}
+    <div class="foot"><div>${wizardStep > 0 ? `<button class="btn" data-wz="back">${t("back")}</button>` : ""}</div>
+    <div>${!last ? `<button class="btn link" data-wz="finish">${t("skip")}</button> ` : ""}
+    <button class="btn primary" data-wz="${last ? "finish" : "next"}">${last ? t("finish") : t("next")}</button></div></div></div>`;
+  bindIn(w);
+}
+
+/* ---------- Events ---------- */
+function bind() { bindIn(document.body); }
+function bindIn(root) {
+  root.querySelectorAll("[data-nav]").forEach(a => a.onclick = () => { page = a.dataset.nav; selected = page === "layout" ? selected : null; render(); });
+  root.querySelectorAll("[data-switch]").forEach(i => i.onchange = () => {
+    const v = i.checked, id = i.dataset.switch;
+    if (id === "paused") { send({ cmd: "set_paused", value: v }); return; }
+    if (id === "osd") C.ui.osd = v;
+    if (id === "only_apple") C.only_with_apple = v;
+    if (id === "fnmods") C.top_row.function_with_modifiers = v;
+    commit();
+  });
+  root.querySelectorAll("[data-seg]").forEach(seg => seg.querySelectorAll("button").forEach(b => b.onclick = () => {
+    const v = b.dataset.v, id = seg.dataset.seg;
+    if (id === "toprow") { C.top_row.mode = v; commit(); }
+    else if (id === "autostart") send({ cmd: "set_autostart", mode: v });
+    else if (id === "layer") { layer = v; layerAuto = null; editMode = null; refreshLayout(); return; }
+    else if (id === "iso") { C.iso_swap = v; commit(); }
+    seg.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
+  }));
+  root.querySelectorAll("[data-preset]").forEach(c => c.onclick = () => { C.preset = c.dataset.preset; commit(); root.querySelectorAll("[data-preset]").forEach(x => x.classList.toggle("on", x === c)); });
+  root.querySelectorAll("[data-toprow]").forEach(c => c.onclick = () => { C.top_row.mode = c.dataset.toprow; commit(); root.querySelectorAll("[data-toprow]").forEach(x => x.classList.toggle("on", x === c)); });
+  root.querySelectorAll("[data-cmd]").forEach(b => b.onclick = () => {
+    const c = b.dataset.cmd;
+    if (c === "add_rule") { C.rules.push({ trigger: "Cmd+Shift+T", action: "Ctrl+Shift+T" }); commit(); render(); return; }
+    if (c === "reset_all" && !confirm(t("reset_confirm"))) return;
+    send({ cmd: c });
+  });
+  root.querySelectorAll("[data-group]").forEach(i => i.onchange = () => {
+    const id = i.dataset.group;
+    C.disabled = C.disabled.filter(x => x !== id);
+    if (!i.checked) C.disabled.push(id);
+    commit();
+  });
+  root.querySelectorAll("[data-media]").forEach(s => s.onchange = () => {
+    const k = s.dataset.media, v = s.value;
+    C.top_row.keys = C.top_row.keys || {};
+    if (v === S.defaults.media[k] || (v === k && !S.defaults.media[k])) delete C.top_row.keys[k]; else C.top_row.keys[k] = v;
+    commit();
+  });
+  const bat = root.querySelector("[data-set-battery]");
+  if (bat) bat.onchange = () => {
+    C.battery.warn_at = bat.value.split(/[,; ]+/).map(Number).filter(n => n > 0 && n <= 100);
+    commit();
+  };
+  const lang = root.querySelector("[data-set-lang]");
+  if (lang) lang.onchange = () => { C.ui.language = lang.value; commit(); };
+  // User rules.
+  root.querySelectorAll("[data-rule-mod]").forEach(b => b.onclick = () => {
+    const i = +b.dataset.ruleMod, m = b.dataset.m, r = C.rules[i];
+    let mods = triggerMods(r.trigger);
+    mods = mods.includes(m) ? mods.filter(x => x !== m) : [...mods, m];
+    r.trigger = [...mods, triggerKey(r.trigger)].join("+");
+    commit(); render();
+  });
+  root.querySelectorAll("[data-rule-key]").forEach(s => s.onchange = () => {
+    const r = C.rules[+s.dataset.ruleKey];
+    r.trigger = [...triggerMods(r.trigger), s.value].join("+");
+    commit();
+  });
+  root.querySelectorAll("[data-rule-action]").forEach(inp => recorder(inp, (v) => { C.rules[+inp.dataset.ruleAction].action = v; commit(); }));
+  root.querySelectorAll("[data-rule-del]").forEach(b => b.onclick = () => { C.rules.splice(+b.dataset.ruleDel, 1); commit(); render(); });
+  // Wizard.
+  root.querySelectorAll("[data-wz]").forEach(b => b.onclick = () => {
+    const a = b.dataset.wz;
+    if (a === "next") wizardStep++;
+    else if (a === "back") wizardStep--;
+    else { wizardStep = -1; C.ui.first_run_done = true; commit(); }
+    renderWizard();
+  });
+  bindLayout(root);
+}
+
+function bindLayout(root) {
+  root.querySelectorAll(".kb .key[data-key]").forEach(el => el.onclick = () => { selected = el.dataset.key; editMode = null; refreshLayout(); });
+  const panel = root.querySelector("#panel");
+  if (!panel) return;
+  panel.querySelectorAll("input[name=kind]").forEach(r => r.onchange = () => {
+    editMode = r.value;
+    const view = layerAuto || layer;
+    if (r.value === "default") { editMode = null; setAction(view, selected, null); }
+    else if (r.value === "none") { setAction(view, selected, "none"); }
+    refreshPanel();
+  });
+  const view = () => layerAuto || layer;
+  const ks = panel.querySelector("[data-set=key]");
+  if (ks) ks.onchange = () => ks.value && setAction(view(), selected, ks.value);
+  const as = panel.querySelector("[data-set=action]");
+  if (as) as.onchange = () => as.value && setAction(view(), selected, as.value);
+  const ch = panel.querySelector("[data-set=chord]");
+  if (ch) recorder(ch, (v) => setAction(view(), selected, v));
+}
+
+/** Turns a text input into a shortcut recorder that also accepts typed text. */
+function recorder(inp, done) {
+  inp.onkeydown = (e) => {
+    if (e.key === "Enter" && !e.ctrlKey && !e.altKey && !e.metaKey) { inp.blur(); return; }
+    const key = codeToKey(e.code);
+    const isMod = /^(Control|Shift|Alt|Meta)/.test(e.code);
+    if (!key && !isMod) return;
+    if (!e.ctrlKey && !e.altKey && !e.metaKey && !isMod && key && key.length === 1) return; // plain typing
+    e.preventDefault();
+    if (isMod) return;
+    const parts = [];
+    if (e.ctrlKey) parts.push("Ctrl");
+    if (e.altKey) parts.push("Alt");
+    if (e.shiftKey) parts.push("Shift");
+    if (e.metaKey) parts.push("Win");
+    parts.push(key);
+    inp.value = parts.join("+");
+    done(inp.value);
+  };
+  inp.onchange = () => { if (inp.value.trim()) done(inp.value.trim()); };
+}
+
+function refreshLayout() {
+  if (page !== "layout") return;
+  const kb = $("#kbcard"); if (kb) kb.innerHTML = keyboardHtml();
+  const tabs = $(".layers"); if (tabs) tabs.outerHTML = layerTabs();
+  refreshPanel();
+  bindIn($("main"));
+}
+function refreshPanel() {
+  const p = $("#panel"); if (!p) return;
+  const focused = document.activeElement && p.contains(document.activeElement) && document.activeElement.tagName === "INPUT";
+  if (focused) return;
+  p.innerHTML = keyPanel();
+  bindLayout($("main"));
+}
+
+/* ---------- Live tester ---------- */
+const MOD_KEYS = { LCtrl: "Ctrl", RCtrl: "Ctrl", LAlt: "Alt", RAlt: "AltGr", LShift: "Shift", RShift: "Shift", LWin: "Win", RWin: "Win" };
+const PHYS_MOD = { Fn: "fn", LCtrl: "⌃", RCtrl: "⌃", LAlt: "⌥", RAlt: "⌥", LWin: "⌘", RWin: "⌘", LShift: "⇧", RShift: "⇧" };
+const VK_NAMES = { 0xAF: "volume_up", 0xAE: "volume_down", 0xAD: "mute", 0xB3: "play_pause", 0xB0: "next_track", 0xB1: "prev_track", 0xB2: "media_stop", 0xA6: "browser_back", 0xA7: "browser_forward", 0x13: "pause" };
+
+function onTrace(e) {
+  const k = e.key;
+  if (e.down) physDown.add(k); else physDown.delete(k);
+  // What Windows received.
+  const outs = e.pass ? [{ key: k, down: e.down }] : e.out;
+  let produced = null;
+  for (const o of outs) {
+    if (o.vk !== undefined) {
+      if (o.down && o.vk !== 0xE8) produced = actionLabel(VK_NAMES[o.vk] || ("vk:0x" + o.vk.toString(16)));
+      continue;
+    }
+    if (o.down) {
+      if (MOD_KEYS[o.key]) logical.add(o.key);
+      else {
+        const mods = [...new Set([...logical].map(m => MOD_KEYS[m]))];
+        produced = [...mods, keyLabel(o.key)].join("+");
+      }
+    } else if (MOD_KEYS[o.key]) logical.delete(o.key);
+  }
+  if (e.down && !PHYS_MOD[k] && !/^(Fn)$/.test(k)) {
+    const held = [...physDown].filter(x => PHYS_MOD[x] && x !== k).map(x => PHYS_MOD[x]);
+    const from = [...new Set(held), k === "Eject" ? "⏏" : keyLabel(k)].join(" ");
+    const last = events[events.length - 1];
+    if (!(last && last.from === from && last.to === (produced || "—") && last.repeat)) {
+      events.push({ from, to: produced || "—", same: produced === keyLabel(k), repeat: true });
+      if (events.length > 30) events.shift();
+    }
+  }
+  if (!e.down && events.length) events[events.length - 1].repeat = false;
+  // Wizard checks.
+  if (e.down && k === "Fn") wizardChecks.fn = true;
+  if (e.down && k === "Eject") wizardChecks.eject = true;
+  if (e.down && k === "C" && (physDown.has("LWin") || physDown.has("RWin"))) wizardChecks.combo = true;
+  if (wizardStep === 4) renderWizard();
+  // Auto layer: holding fn/⌘/⌥/⌃ shows that layer.
+  const auto = physDown.has("Fn") ? "fn" : (physDown.has("LWin") || physDown.has("RWin")) ? "cmd"
+    : (physDown.has("LAlt") || physDown.has("RAlt")) ? "opt" : physDown.has("LCtrl") ? "ctrl" : null;
+  const layerChanged = auto !== layerAuto;
+  layerAuto = auto;
+  if (page === "layout") {
+    if (e.down && !PHYS_MOD[k] && k !== "Fn" && !document.activeElement?.matches("input,select")) {
+      selected = k;
+      editMode = null;
+    }
+    if (layerChanged || e.down) refreshLayout();
+    else document.querySelectorAll(`.kb .key[data-key="${CSS.escape(k)}"]`).forEach(el => el.classList.toggle("down", e.down));
+    const tst = $("#tester"); if (tst) tst.innerHTML = testerHtml();
+  }
+}
+
+// Keys pressed to try the keyboard must not click buttons or scroll the page.
+document.addEventListener("keydown", (e) => {
+  if (e.target.closest && e.target.closest("input, select")) return;
+  e.preventDefault();
+}, true);
+document.addEventListener("contextmenu", (e) => { if (!e.target.closest("input")) e.preventDefault(); });
+
+/* Start: ask the app for state. */
+send({ cmd: "ready" });
+</script>
+</body>
+</html>

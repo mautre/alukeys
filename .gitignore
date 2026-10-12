@@ -1,0 +1,5 @@
+/target
+*.log
+alukeys-diag-report*.txt
+/dist
+/.claude/
