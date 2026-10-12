@@ -33,6 +33,9 @@ fn main() {
     report::section("DEVICES");
     let apple = enumerate::dump();
 
+    report::section("BATTERY PROBE");
+    enumerate::battery_probe();
+
     report::section("LIVE SESSION");
     live::run(&apple);
 

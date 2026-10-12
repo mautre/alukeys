@@ -6,8 +6,8 @@ use std::ptr::null_mut;
 
 use alukeys_core::model::{self, APPLE_VID};
 use windows_sys::Win32::Devices::HumanInterfaceDevice::{
-    HIDP_CAPS, HIDP_REPORT_TYPE, HIDP_STATUS_SUCCESS, HIDP_VALUE_CAPS, HidD_GetFeature,
-    HidD_GetProductString, HidP_Feature, HidP_GetCaps, HidP_GetUsageValue, HidP_GetValueCaps, HidP_Input,
+    HIDP_REPORT_TYPE, HIDP_STATUS_SUCCESS, HIDP_VALUE_CAPS, HidD_GetFeature, HidD_GetInputReport,
+    HidD_GetProductString, HidP_Feature, HidP_GetUsageValue, HidP_GetValueCaps, HidP_Input,
 };
 use windows_sys::Win32::Foundation::{
     CloseHandle, GENERIC_READ, GENERIC_WRITE, HANDLE, HWND, INVALID_HANDLE_VALUE,
@@ -247,54 +247,78 @@ pub fn battery_from_input(pp: &[u8], report: &[u8]) -> Option<u8> {
     (st == HIDP_STATUS_SUCCESS).then(|| scale(value, &caps))
 }
 
-/// Asks each Apple collection for a battery feature report. Blocking: call off the hook thread.
-pub fn read_battery(paths: &[String]) -> Option<u8> {
+/// Where the battery level was last read successfully, so later polls go straight there.
+static BATTERY_ROUTE: std::sync::Mutex<Option<(String, bool, usize)>> = std::sync::Mutex::new(None);
+
+/// Battery report location from the HID descriptors: report ID and logical maximum.
+fn battery_report(paths: &[String]) -> Option<(u8, i32)> {
+    use windows_sys::Win32::Devices::HumanInterfaceDevice::{HidD_FreePreparsedData, HidD_GetPreparsedData};
     for path in paths {
         let Some(h) = open(path) else { continue };
-        let level = unsafe { battery_feature(h) };
+        let mut ppd: isize = 0;
+        let found = unsafe { HidD_GetPreparsedData(h, &mut ppd) }.then(|| {
+            let caps = battery_caps(HidP_Input, ppd).or_else(|| battery_caps(HidP_Feature, ppd));
+            unsafe { HidD_FreePreparsedData(ppd) };
+            caps.map(|c| (c.ReportID, c.LogicalMax))
+        });
         unsafe { CloseHandle(h) };
-        if level.is_some() {
-            return level;
+        if let Some(Some(r)) = found {
+            return Some(r);
         }
     }
     None
 }
 
-unsafe fn battery_feature(h: HANDLE) -> Option<u8> {
-    use windows_sys::Win32::Devices::HumanInterfaceDevice::{HidD_FreePreparsedData, HidD_GetPreparsedData};
-    let mut ppd: isize = 0;
-    if !unsafe { HidD_GetPreparsedData(h, &mut ppd) } {
-        return None;
+/// Requests one report; `feature` picks GET_FEATURE over GET_INPUT_REPORT.
+fn request(path: &str, id: u8, feature: bool, len: usize) -> Option<Vec<u8>> {
+    let h = open(path)?;
+    let mut buf = vec![0u8; len];
+    buf[0] = id;
+    let ok = unsafe {
+        if feature {
+            HidD_GetFeature(h, buf.as_mut_ptr() as *mut c_void, len as u32)
+        } else {
+            HidD_GetInputReport(h, buf.as_mut_ptr() as *mut c_void, len as u32)
+        }
+    };
+    unsafe { CloseHandle(h) };
+    (ok && buf[0] == id).then_some(buf)
+}
+
+/// Reads the battery level (percent). Apple keyboards declare it as input report 0x47
+/// but, like Linux's HID_BATTERY_QUIRK_FEATURE notes, may only answer a feature request;
+/// so several request kinds and lengths are tried on every Apple collection.
+/// Blocking (Bluetooth round trip): call off the hook thread.
+pub fn read_battery(paths: &[String]) -> Option<u8> {
+    let (id, max) = battery_report(paths)?;
+    let decode = |buf: &[u8]| {
+        let v = *buf.get(1)? as u32;
+        let max = max.max(1) as u32;
+        Some(if max <= 100 { v.min(100) } else { (v * 100 / max).min(100) } as u8)
+    };
+    let known = BATTERY_ROUTE.lock().ok().and_then(|r| r.clone());
+    if let Some((path, feature, len)) = known
+        && let Some(buf) = request(&path, id, feature, len)
+    {
+        return decode(&buf);
     }
-    let result = (|| {
-        let mut caps: HIDP_CAPS = unsafe { zeroed() };
-        if unsafe { HidP_GetCaps(ppd, &mut caps) } != HIDP_STATUS_SUCCESS {
-            return None;
+    for path in paths {
+        for feature in [true, false] {
+            for len in [2usize, 3, 4, 8, 16] {
+                if let Some(buf) = request(path, id, feature, len) {
+                    crate::log!(
+                        "battery: report {id:02X} via {} len {len} on {path}",
+                        if feature { "feature" } else { "input" }
+                    );
+                    if let Ok(mut r) = BATTERY_ROUTE.lock() {
+                        *r = Some((path.clone(), feature, len));
+                    }
+                    return decode(&buf);
+                }
+            }
         }
-        let vcap = battery_caps(HidP_Feature, ppd)?;
-        let len = caps.FeatureReportByteLength as usize;
-        let mut buf = vec![0u8; len.max(2)];
-        buf[0] = vcap.ReportID;
-        if !unsafe { HidD_GetFeature(h, buf.as_mut_ptr() as *mut c_void, buf.len() as u32) } {
-            return None;
-        }
-        let mut value = 0u32;
-        let st = unsafe {
-            HidP_GetUsageValue(
-                HidP_Feature,
-                BATTERY_PAGE,
-                0,
-                BATTERY_USAGE,
-                &mut value,
-                ppd,
-                buf.as_mut_ptr(),
-                buf.len() as u32,
-            )
-        };
-        (st == HIDP_STATUS_SUCCESS).then(|| scale(value, &vcap))
-    })();
-    unsafe { HidD_FreePreparsedData(ppd) };
-    result
+    }
+    None
 }
 
 #[cfg(test)]

@@ -338,3 +338,61 @@ fn probe(handle: HANDLE, ppd: isize, ty: HIDP_REPORT_TYPE, id: u8, len: u16) {
     }
     rep!("{line}");
 }
+
+/// Tries every way to read battery report 0x47 (input/feature, several lengths) on every
+/// Apple collection, logging each attempt. Apple declares it as an input report but may
+/// only answer it as a feature report.
+pub fn battery_probe() {
+    const ID: u8 = 0x47;
+    let paths: Vec<String> = unsafe {
+        let mut n = 0u32;
+        GetRawInputDeviceList(null_mut(), &mut n, size_of::<RAWINPUTDEVICELIST>() as u32);
+        let mut list = vec![zeroed::<RAWINPUTDEVICELIST>(); n as usize];
+        let got = GetRawInputDeviceList(list.as_mut_ptr(), &mut n, size_of::<RAWINPUTDEVICELIST>() as u32);
+        list.truncate(if got == u32::MAX { 0 } else { got as usize });
+        list.iter().map(|d| device_name(d.hDevice)).collect()
+    };
+    let apple: Vec<String> =
+        paths.into_iter().filter(|p| vid_pid_from_path(p).is_some_and(|(v, _)| v == APPLE_VID)).collect();
+    let mut found = false;
+    for path in &apple {
+        let short = path.split('&').find(|s| s.starts_with("Col")).unwrap_or("?").to_string();
+        for (rw, access) in [(true, "rw"), (false, "query")] {
+            let Some((h, _)) = open(path, rw) else {
+                rep!("  {short} [{access}]: open failed: error {}", unsafe { GetLastError() });
+                continue;
+            };
+            for feature in [true, false] {
+                for len in [2u32, 3, 4, 8, 16] {
+                    let mut buf = vec![0u8; len as usize];
+                    buf[0] = ID;
+                    let ok = unsafe {
+                        if feature {
+                            HidD_GetFeature(h, buf.as_mut_ptr() as *mut c_void, len)
+                        } else {
+                            HidD_GetInputReport(h, buf.as_mut_ptr() as *mut c_void, len)
+                        }
+                    };
+                    let kind = if feature { "feature" } else { "input" };
+                    if ok {
+                        found = true;
+                        out!(
+                            "  {short} [{access}] {kind} len={len}: OK {}  => battery raw {} (~{}%)",
+                            hex(&buf),
+                            buf[1],
+                            buf[1] as u32 * 100 / 255
+                        );
+                    } else {
+                        rep!("  {short} [{access}] {kind} len={len}: error {}", unsafe { GetLastError() });
+                    }
+                }
+            }
+            unsafe { CloseHandle(h) };
+        }
+    }
+    if !found {
+        out!(
+            "  battery: no request succeeded (the keyboard may still send report 0x47 on its own; watch RAWHID 47 lines below)"
+        );
+    }
+}
