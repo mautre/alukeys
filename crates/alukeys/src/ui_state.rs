@@ -164,6 +164,31 @@ pub fn state(c: &Context) -> String {
     state.to_string()
 }
 
+/// One line of the key log: `down LWin [Fn] -> LCtrl+` (or `pass`).
+pub fn trace_line(t: &crate::shared::Trace) -> String {
+    let out: Vec<String> = t
+        .out
+        .iter()
+        .map(|o| match o {
+            alukeys_core::Out::Key { key, down } => format!("{key}{}", if *down { "+" } else { "-" }),
+            alukeys_core::Out::Vk { vk, down } => format!("vk{vk:02X}{}", if *down { "+" } else { "-" }),
+        })
+        .collect();
+    format!(
+        "key {} {} held=[{}] -> {}",
+        if t.down { "down" } else { "up  " },
+        t.key.name(),
+        mods_list(t.mods).join(" "),
+        if t.pass {
+            "pass".to_string()
+        } else if out.is_empty() {
+            "swallow".to_string()
+        } else {
+            out.join(" ")
+        }
+    )
+}
+
 /// One traced key event for the live tester.
 pub fn trace_json(events: &[crate::shared::Trace]) -> String {
     let list: Vec<Value> = events
@@ -179,7 +204,7 @@ pub fn trace_json(events: &[crate::shared::Trace]) -> String {
                     alukeys_core::Out::Vk { vk, down } => json!({ "vk": vk, "down": down }),
                 })
                 .collect();
-            json!({ "key": t.key.name(), "down": t.down, "pass": t.pass, "out": out })
+            json!({ "key": t.key.name(), "down": t.down, "mods": mods_list(t.mods), "pass": t.pass, "out": out })
         })
         .collect();
     json!({ "type": "trace", "events": list }).to_string()

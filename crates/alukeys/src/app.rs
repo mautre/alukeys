@@ -53,6 +53,7 @@ const ID_AUTO_NORMAL: usize = 152;
 const ID_AUTO_ELEVATED: usize = 153;
 const ID_ELEVATE: usize = 155;
 const ID_ABOUT: usize = 160;
+const ID_LOG_KEYS: usize = 161;
 const ID_EXIT: usize = 199;
 
 struct App {
@@ -286,6 +287,9 @@ impl App {
             "open_folder" => self.on_command(ID_OPEN_FOLDER),
             "edit_file" => self.on_command(ID_EDIT_CONFIG),
             "open_bt" => open("ms-settings:bluetooth", ""),
+            "test_osd" => {
+                osd::show(glyph::BRIGHTNESS, tr("Так выглядит индикатор", "This is the indicator"), Some(60))
+            }
             "close" => settings_window::close(),
             _ => {}
         }
@@ -495,6 +499,13 @@ impl App {
                 );
             }
             add(menu, MF_SEPARATOR, 0, "");
+            let logging = crate::shared::LOG_KEYS.load(Ordering::Relaxed);
+            add(
+                menu,
+                MF_STRING | check(logging),
+                ID_LOG_KEYS,
+                tr("Записывать нажатия в журнал (отладка)", "Log key events (troubleshooting)"),
+            );
             add(menu, MF_STRING, ID_ABOUT, tr("О программе", "About"));
             add(menu, MF_STRING, ID_EXIT, tr("Выход", "Exit"));
 
@@ -587,6 +598,11 @@ impl App {
                 };
                 unsafe { MessageBoxIndirectW(&params) };
             }
+            ID_LOG_KEYS => {
+                let on = !crate::shared::LOG_KEYS.load(Ordering::Relaxed);
+                crate::shared::LOG_KEYS.store(on, Ordering::Relaxed);
+                log!("key log {}", if on { "on" } else { "off" });
+            }
             ID_EXIT => quit(self.hwnd),
             _ => {}
         }
@@ -648,7 +664,12 @@ unsafe extern "system" fn wnd_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam:
         WM_TRACE => {
             let events: Vec<_> =
                 crate::shared::TRACE.lock().map(|mut q| q.drain(..).collect()).unwrap_or_default();
-            if !events.is_empty() {
+            if crate::shared::LOG_KEYS.load(Ordering::Relaxed) {
+                for e in &events {
+                    log!("{}", ui_state::trace_line(e));
+                }
+            }
+            if !events.is_empty() && settings_window::is_open() {
                 settings_window::send(&ui_state::trace_json(&events));
             }
             0

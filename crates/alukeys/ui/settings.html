@@ -120,7 +120,7 @@ select:focus, input[type=text]:focus { border-bottom: 2px solid var(--accent); }
 .key:hover { border-color: var(--text3); }
 .key.sel { outline: 2px solid var(--accent); outline-offset: 1px; }
 .key.down { background: var(--accent); color: var(--accent-fg); transform: translateY(1px); }
-.key.down .sub, .key.down .ru { color: var(--accent-fg); }
+.key.down .ru, .key.down .corner, .key.down .res, .key.down .icon { color: var(--accent-fg); }
 .key.short { height: calc(var(--u) * .62); }
 .key .main { position: absolute; left: 6px; top: 4px; font-size: 13px; color: var(--text); }
 .key.down .main { color: var(--accent-fg); }
@@ -128,11 +128,13 @@ select:focus, input[type=text]:focus { border-bottom: 2px solid var(--accent); }
 .key .lg { position: absolute; left: 6px; bottom: 4px; font-size: 10.5px; }
 .key .lg.c { left: 0; right: 0; text-align: center; top: 50%; transform: translateY(-50%); bottom: auto; font-size: 11px; }
 .key .glyph { position: absolute; right: 6px; top: 4px; font-size: 13px; }
-.key .sub { position: absolute; left: 3px; right: 3px; bottom: 2px; text-align: center; font-size: 10px; font-weight: 600; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.key.mapped { box-shadow: var(--cap-shadow), inset 0 -2px 0 var(--accent); }
+/* A key that does something else on this layer: tinted, with the result in the middle
+   and the printed legend small in the corner. */
+.key.mapped { background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--cap); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+.key .corner { position: absolute; left: 6px; top: 3px; font-size: 10px; color: var(--text3); }
+.key .res { position: absolute; inset: 0; display: grid; place-items: center; padding: 8px 3px 0; font-size: 11px; font-weight: 600; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.key .icon { position: absolute; inset: 0; display: grid; place-items: center; padding-top: 6px; font-size: 13px; color: var(--text); }
 .key.user::after { content: ""; position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
-.key.has-sub .main, .key.has-sub .lg { opacity: .55; }
-.key.has-sub .ru { display: none; }
 .arrows { display: grid; grid-template-columns: repeat(3, var(--u)); grid-template-rows: calc(var(--u) / 2 - 1px) calc(var(--u) / 2 - 1px); gap: 2px var(--gap); }
 .arrows .key { height: auto; }
 .arrows .key .lg.c { font-size: 10px; }
@@ -232,7 +234,8 @@ const STR = {
     toprow_lead: "Действия клавиш верхнего ряда. С fn клавиши работают наоборот.",
     fn_with_mods: "С модификаторами всегда F1–F12", fn_with_mods_d: "Alt+F4, Ctrl+F5, Shift+F10 работают без fn",
     fkey_self: "F-клавиша (без действия)",
-    osd: "Индикатор на экране", osd_d: "Показывать яркость, режим верхнего ряда и паузу",
+    osd: "Индикатор на экране", osd_d: "Плашка внизу экрана при смене яркости, режима верхнего ряда (fn+Esc), паузе и подключении клавиатуры",
+    osd_try: "Показать пример",
     battery_warn: "Предупреждать о батарее", battery_warn_d: "Уведомление при заряде (в процентах)",
     language: "Язык интерфейса", lang_auto: "Как в Windows",
     only_apple: "Только когда подключена клавиатура Apple", only_apple_d: "Когда её нет, другие клавиатуры работают без изменений",
@@ -296,7 +299,8 @@ const STR = {
     toprow_lead: "Top row actions. Holding fn swaps the behaviour.",
     fn_with_mods: "F1–F12 when a modifier is held", fn_with_mods_d: "Alt+F4, Ctrl+F5, Shift+F10 work without fn",
     fkey_self: "F-key (no action)",
-    osd: "On-screen indicator", osd_d: "Show brightness, top-row mode and pause",
+    osd: "On-screen indicator", osd_d: "A small panel at the bottom of the screen for brightness, top-row mode (fn+Esc), pause and keyboard connection",
+    osd_try: "Show example",
     battery_warn: "Battery warnings", battery_warn_d: "Notify at these levels (percent)",
     language: "Language", lang_auto: "Same as Windows",
     only_apple: "Only while the Apple keyboard is connected", only_apple_d: "Other keyboards stay untouched when it is away",
@@ -489,9 +493,8 @@ function shortLabel(a) {
 }
 
 /** Characters a key types (through the base remap), per installed layout. */
-function charsFor(key) {
-  const tgt = (C && S.effective.remap[key]) || key;
-  const name = /^[A-Za-z0-9]+$/.test(tgt) || KEY_LABEL[tgt] !== undefined ? tgt : key;
+/** Characters a key types in each installed layout. */
+function charsFor(name) {
   const res = [];
   for (const l of S.layouts || []) {
     const v = l.keys[name];
@@ -595,6 +598,18 @@ function pageKeyboard() {
 }
 
 /* --- Layout editor --- */
+const CHAR_KEY = /^([A-Z0-9]|Grave|IntlBackslash|Minus|Equal|LBracket|RBracket|Backslash|Semicolon|Quote|Comma|Period|Slash)$/;
+
+/** Printed-style legend of a character key: Latin top-left, Cyrillic bottom-right. */
+function charLegend(name) {
+  const ch = charsFor(name);
+  const lat = ch.find(c => c.lang === "en") || ch[0];
+  const cyr = ch.find(c => c.lang !== (lat && lat.lang));
+  const up = (c) => c.toUpperCase();
+  const mainCh = lat ? up(lat.ch) : keyLabel(name);
+  return `<span class="main">${esc(mainCh)}</span>${cyr && up(cyr.ch) !== mainCh ? `<span class="ru">${esc(up(cyr.ch))}</span>` : ""}`;
+}
+
 function keyCap(k, w, legend, sym, opt) {
   const u = `calc(var(--u) * ${w} + var(--gap) * ${Math.max(0, w - 1)})`;
   if (k === "EnterTail") return `<div style="width:${u};flex:none"></div>`;
@@ -604,23 +619,26 @@ function keyCap(k, w, legend, sym, opt) {
   const user = JSON.stringify(eff) !== JSON.stringify(def);
   // The ISO Enter spans two rows without making its row taller.
   const iso = opt && opt.iso ? "height:calc(var(--u) * 2 + var(--gap));margin-bottom:calc(-1 * (var(--u) + var(--gap)));z-index:1;" : "";
+  const changed = eff != null && eff !== k;
+  const printed = sym || legend || (CHAR_KEY.test(k) ? charsFor(k).map(c => c.ch.toUpperCase())[0] : null) || keyLabel(k);
   let inner;
-  if (isF(k)) {
-    const m = S.effective.media[k];
-    inner = `<span class="lg">${legend}</span>${m && ACT_GLYPH[m] ? `<span class="glyph ic">${ACT_GLYPH[m]}</span>` : ""}`;
+  let tint = changed;
+  if (isF(k) && changed && ACT_GLYPH[eff]) {
+    // Media legend, as printed on the Apple top row.
+    inner = `<span class="corner">${legend}</span><span class="icon ic">${ACT_GLYPH[eff]}</span>`;
+    tint = user;
+  } else if (changed && CHAR_KEY.test(eff)) {
+    inner = charLegend(eff);
+  } else if (changed) {
+    inner = `<span class="corner">${esc(printed)}</span><span class="res">${esc(shortLabel(eff))}</span>`;
   } else if (legend !== undefined) {
     inner = sym ? `<span class="glyph">${sym}</span><span class="lg">${legend}</span>` : `<span class="lg c">${legend}</span>`;
   } else {
-    const ch = charsFor(k);
-    const lat = ch.find(c => c.lang === "en") || ch[0];
-    const cyr = ch.find(c => c.lang !== (lat && lat.lang));
-    const mainCh = lat ? (/^[a-z]$/.test(lat.ch) ? lat.ch.toUpperCase() : lat.ch) : keyLabel(k);
-    inner = `<span class="main">${esc(mainCh)}</span>${cyr ? `<span class="ru">${esc(cyr.ch.toUpperCase() === cyr.ch ? cyr.ch : cyr.ch.toUpperCase())}</span>` : ""}`;
+    inner = charLegend(k);
   }
-  const sub = eff != null && eff !== k ? `<span class="sub">${esc(shortLabel(eff))}</span>` : "";
-  const cls = ["key", isF(k) || k === "Esc" || k === "Eject" ? "short" : "", sub ? "has-sub mapped" : "", user ? "user" : "",
+  const cls = ["key", isF(k) || k === "Esc" || k === "Eject" ? "short" : "", tint ? "mapped" : "", user ? "user" : "",
     selected === k ? "sel" : "", physDown.has(k) ? "down" : ""].join(" ");
-  return `<div class="${cls}" data-key="${k}" style="width:${u};${iso}" title="${esc(keyLabel(k))}">${inner}${sub}</div>`;
+  return `<div class="${cls}" data-key="${k}" style="width:${u};${iso}" title="${esc(keyLabel(k))}">${inner}</div>`;
 }
 
 function keyboardHtml() {
@@ -784,7 +802,9 @@ function pageOptions() {
   const lang = C.ui.language;
   return `<h1>${t("nav_options")}</h1>
     <div class="card rows">
-      ${switchRow("osd", "", t("osd"), t("osd_d"), C.ui.osd)}
+      <div class="row"><span class="ic lead"></span><div class="t"><b>${t("osd")}</b><small>${t("osd_d")}</small></div>
+        <button class="btn" data-cmd="test_osd">${t("osd_try")}</button>
+        <label class="switch"><span>${C.ui.osd ? t("on") : t("off")}</span><input type="checkbox" data-switch="osd" ${C.ui.osd ? "checked" : ""}></label></div>
       <div class="row"><span class="ic lead"></span><div class="t"><b>${t("battery_warn")}</b><small>${t("battery_warn_d")}</small></div>
         <input type="text" data-set-battery value="${esc(C.battery.warn_at.join(", "))}" style="min-width:140px;width:140px"></div>
       ${switchRow("only_apple", "", t("only_apple"), t("only_apple_d"), C.only_with_apple)}
@@ -1005,7 +1025,8 @@ function onTrace(e) {
     } else if (MOD_KEYS[o.key]) logical.delete(o.key);
   }
   if (e.down && !PHYS_MOD[k] && !/^(Fn)$/.test(k)) {
-    const held = [...physDown].filter(x => PHYS_MOD[x] && x !== k).map(x => PHYS_MOD[x]);
+    const MSYM = { Fn: "fn", Ctrl: "⌃", Opt: "⌥", Cmd: "⌘", Shift: "⇧" };
+    const held = e.mods ? e.mods.map(m => MSYM[m]) : [...physDown].filter(x => PHYS_MOD[x] && x !== k).map(x => PHYS_MOD[x]);
     const from = [...new Set(held), k === "Eject" ? "⏏" : keyLabel(k)].join(" ");
     const last = events[events.length - 1];
     if (!(last && last.from === from && last.to === (produced || "—") && last.repeat)) {

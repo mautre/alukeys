@@ -17,7 +17,7 @@ use windows_sys::Win32::Foundation::{HANDLE, HWND, LPARAM, LRESULT, WPARAM};
 use windows_sys::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows_sys::Win32::System::Threading::{GetCurrentThread, SetThreadPriority, THREAD_PRIORITY_HIGHEST};
 use windows_sys::Win32::UI::Input::{
-    GetRawInputData, RAWINPUT, RAWINPUTHEADER, RID_INPUT, RIM_TYPEHID, RIM_TYPEKEYBOARD,
+    GetRawInputBuffer, GetRawInputData, RAWINPUT, RAWINPUTHEADER, RID_INPUT, RIM_TYPEHID, RIM_TYPEKEYBOARD,
 };
 use windows_sys::Win32::UI::WindowsAndMessaging::{
     CallNextHookEx, CreateWindowExW, DefWindowProcW, DestroyWindow, DispatchMessageW, GetMessageW, HC_ACTION,
@@ -150,10 +150,11 @@ fn notify_ui(msg: u32, w: usize, l: isize) {
     }
 }
 
-/// Records an event for the settings key tester; wakes the UI on the first one queued.
-fn trace(key: Key, down: bool, r: &Response) {
+/// Records an event for the settings key tester and the key log; wakes the UI on the
+/// first one queued.
+fn trace(key: Key, down: bool, mods: alukeys_core::PhysMods, r: &Response) {
     use std::sync::atomic::Ordering;
-    if !TRACE_ON.load(Ordering::Relaxed) {
+    if !TRACE_ON.load(Ordering::Relaxed) && !LOG_KEYS.load(Ordering::Relaxed) {
         return;
     }
     let first = {
@@ -161,7 +162,7 @@ fn trace(key: Key, down: bool, r: &Response) {
         if q.len() > 256 {
             return;
         }
-        q.push_back(Trace { key, down, pass: r.pass, out: r.out.clone() });
+        q.push_back(Trace { key, down, mods, pass: r.pass, out: r.out.clone() });
         q.len() == 1
     };
     if first {
@@ -172,12 +173,13 @@ fn trace(key: Key, down: bool, r: &Response) {
 impl State {
     /// Runs one physical event through the engine and performs the result.
     fn feed(&mut self, key: Key, down: bool) -> bool {
+        let mods = self.engine.phys_mods();
         let r = if self.active {
             self.engine.handle(key, down)
         } else {
             Response { pass: true, ..Default::default() }
         };
-        trace(key, down, &r);
+        trace(key, down, mods, &r);
         let pass = r.pass;
         self.apply(r);
         pass
@@ -244,6 +246,9 @@ unsafe extern "system" fn hook_proc(code: i32, wparam: WPARAM, lparam: LPARAM) -
             let down = wparam as u32 == WM_KEYDOWN || wparam as u32 == WM_SYSKEYDOWN;
             let key = Key::from_scan(k.scanCode as u16, k.flags & LLKHF_EXTENDED != 0);
             let swallow = with(|s| {
+                // Hook calls are sent messages and overtake queued WM_INPUT, so an fn
+                // report sent just before this key may still be waiting: read it first.
+                drain_raw_input(s);
                 s.last_hook_ms = s.now_ms();
                 s.raw_since_hook = 0;
                 !s.feed(key, down)
@@ -383,19 +388,51 @@ unsafe fn on_input(lparam: LPARAM) {
         return;
     }
     let raw = unsafe { &*(buf.as_ptr() as *const RAWINPUT) };
+    with(|s| unsafe { handle_raw(s, raw) });
+}
+
+unsafe fn handle_raw(s: &mut State, raw: &RAWINPUT) {
     let device = raw.header.hDevice;
     match raw.header.dwType {
-        RIM_TYPEKEYBOARD if !device.is_null() => {
-            with(|s| s.raw_since_hook += 1);
-        }
+        RIM_TYPEKEYBOARD if !device.is_null() => s.raw_since_hook += 1,
         RIM_TYPEHID => {
             let hid = unsafe { &raw.data.hid };
-            let total = (hid.dwSizeHid * hid.dwCount) as usize;
-            let data = unsafe { std::slice::from_raw_parts(hid.bRawData.as_ptr(), total) };
-            let report = &data[..(hid.dwSizeHid as usize).min(data.len())];
-            with(|s| on_hid(s, device, report));
+            let size = hid.dwSizeHid as usize;
+            let data =
+                unsafe { std::slice::from_raw_parts(hid.bRawData.as_ptr(), size * hid.dwCount as usize) };
+            for report in data.chunks(size.max(1)) {
+                on_hid(s, device, report);
+            }
         }
         _ => {}
+    }
+}
+
+/// Handles raw input still queued for this thread without dispatching any messages.
+fn drain_raw_input(s: &mut State) {
+    let hdr = size_of::<RAWINPUTHEADER>() as u32;
+    for _ in 0..8 {
+        let mut first = 0u32;
+        if unsafe { GetRawInputBuffer(null_mut(), &mut first, hdr) } != 0 || first == 0 {
+            return;
+        }
+        let mut cap = first * 16;
+        let mut buf = vec![0u64; (cap as usize).div_ceil(8)];
+        let n = unsafe { GetRawInputBuffer(buf.as_mut_ptr().cast(), &mut cap, hdr) };
+        if n == 0 || n == u32::MAX {
+            return;
+        }
+        let mut p = buf.as_ptr() as *const u8;
+        let end = unsafe { (buf.as_ptr() as *const u8).add(buf.len() * 8) };
+        for _ in 0..n {
+            if p >= end {
+                return;
+            }
+            let raw = unsafe { &*(p as *const RAWINPUT) };
+            unsafe { handle_raw(s, raw) };
+            // NEXTRAWINPUTBLOCK: blocks are pointer-aligned.
+            p = unsafe { p.add((raw.header.dwSize as usize + 7) & !7) };
+        }
     }
 }
 

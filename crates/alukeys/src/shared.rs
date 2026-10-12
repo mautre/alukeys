@@ -82,10 +82,14 @@ pub fn shared() -> std::sync::MutexGuard<'static, Shared> {
 pub struct Trace {
     pub key: Key,
     pub down: bool,
+    /// Apple modifiers held before this event (as the engine sees them).
+    pub mods: alukeys_core::PhysMods,
     pub pass: bool,
     pub out: Vec<Out>,
 }
 
 /// Tracing is on while the settings window is open.
 pub static TRACE_ON: AtomicBool = AtomicBool::new(false);
+/// Write every key event to the log (tray menu, for troubleshooting).
+pub static LOG_KEYS: AtomicBool = AtomicBool::new(false);
 pub static TRACE: Mutex<VecDeque<Trace>> = Mutex::new(VecDeque::new());
