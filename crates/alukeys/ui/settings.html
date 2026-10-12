@@ -249,7 +249,8 @@ const STR = {
     iso_auto: "Автоматически", on: "Вкл.", off: "Выкл.",
     about_lead: "Свободная программа для клавиатур Apple в Windows. Без подписки и телеметрии.",
     open_folder: "Открыть папку настроек", edit_file: "Открыть файл настроек", reset_all: "Сбросить все настройки", reset_confirm: "Сбросить все настройки к значениям по умолчанию?",
-    license: "Лицензия MIT", config_file: "Файл настроек",
+    license: "Лицензия MIT",
+    wizard_again: "Мастер первоначальной настройки", wizard_again_d: "Пройти шаги первого запуска ещё раз. Его же можно открыть из меню в трее", wizard_open: "Запустить", config_file: "Файл настроек",
     errors: "В настройках есть ошибки",
     wz_welcome: "Добро пожаловать", wz_welcome_d: "Настроим клавиатуру Apple за минуту. Всё можно поменять позже.",
     wz_found: "Найдена клавиатура", wz_mods: "Как вы привыкли нажимать сочетания?", wz_top: "Что делает верхний ряд?",
@@ -316,7 +317,8 @@ const STR = {
     iso_auto: "Automatic", on: "On", off: "Off",
     about_lead: "Free software for Apple keyboards on Windows. No subscription, no telemetry.",
     open_folder: "Open settings folder", edit_file: "Open settings file", reset_all: "Reset all settings", reset_confirm: "Reset all settings to defaults?",
-    license: "MIT licence", config_file: "Settings file",
+    license: "MIT licence",
+    wizard_again: "Setup wizard", wizard_again_d: "Go through the first-run steps again. Also available from the tray menu", wizard_open: "Start", config_file: "Settings file",
     errors: "The settings contain errors",
     wz_welcome: "Welcome", wz_welcome_d: "Let’s set up your Apple keyboard in a minute. Everything can be changed later.",
     wz_found: "Keyboard found", wz_mods: "How do you press shortcuts?", wz_top: "What should the top row do?",
@@ -446,6 +448,10 @@ window.__recv = (msg) => {
     document.documentElement.lang = LANG;
     C = clone(msg.config);
     render();
+  } else if (msg.type === "wizard") {
+    wizardStep = 0;
+    Object.keys(wizardChecks).forEach(k => wizardChecks[k] = false);
+    renderWizard();
   } else if (msg.type === "trace") {
     for (const e of msg.events) onTrace(e);
   }
@@ -876,6 +882,7 @@ function pageAbout() {
       <div class="row"><span class="ic lead"></span><div class="t"><b>AluKeys ${esc(S.version)}</b><small>${t("license")}</small></div></div>
       <div class="row"><span class="ic lead"></span><div class="t"><b>${t("config_file")}</b><small>${esc(S.configPath)}</small></div>
         <button class="btn" data-cmd="edit_file">${t("edit_file")}</button><button class="btn" data-cmd="open_folder">${t("open_folder")}</button></div>
+      <div class="row"><span class="ic lead"></span><div class="t"><b>${t("wizard_again")}</b><small>${t("wizard_again_d")}</small></div><button class="btn" data-cmd="wizard">${t("wizard_open")}</button></div>
       <div class="row"><span class="ic lead"></span><div class="t"><b>${t("reset_all")}</b></div><button class="btn" data-cmd="reset_all">${t("reset")}</button></div>
     </div>`;
 }
@@ -946,6 +953,7 @@ function bindIn(root) {
   root.querySelectorAll("[data-cmd]").forEach(b => b.onclick = () => {
     const c = b.dataset.cmd;
     if (c === "add_rule") { C.rules.push({ trigger: "Cmd+Shift+T", action: "Ctrl+Shift+T" }); commit(); render(); return; }
+    if (c === "wizard") { window.__recv({ type: "wizard" }); return; }
     if (c === "reset_all" && !confirm(t("reset_confirm"))) return;
     send({ cmd: c });
   });

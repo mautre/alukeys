@@ -46,6 +46,7 @@ const ID_PRESET_PC: usize = 122;
 const ID_PRESET_ASIS: usize = 123;
 const ID_PAUSE: usize = 130;
 const ID_SETTINGS: usize = 135;
+const ID_WIZARD: usize = 136;
 const ID_EDIT_CONFIG: usize = 140;
 const ID_OPEN_FOLDER: usize = 141;
 const ID_AUTO_OFF: usize = 151;
@@ -85,7 +86,7 @@ fn engine_cmd(cmd: usize, arg: isize) {
     unsafe { PostMessageW(e.get(), WM_ENGINE_CMD, cmd, arg) };
 }
 
-pub fn run(config: Config, config_error: Option<String>) {
+pub fn run(config: Config, config_error: Option<String>, splash: bool) {
     unsafe {
         let hinst = GetModuleHandleW(null_mut());
         let class = wide("AluKeysTray");
@@ -161,6 +162,19 @@ pub fn run(config: Config, config_error: Option<String>) {
         });
         if let Some(e) = config_error.or_else(|| errors.first().cloned()) {
             tray::notify(hwnd, tr("Ошибка в файле настроек", "Settings file error"), &e, true);
+        }
+        if splash {
+            let sh = shared();
+            let status = if sh.device.connected {
+                tr("Клавиатура подключена · AluKeys в трее", "Keyboard connected · AluKeys is in the tray")
+            } else {
+                tr(
+                    "Ждём клавиатуру Apple · AluKeys в трее",
+                    "Waiting for the Apple keyboard · AluKeys is in the tray",
+                )
+            };
+            drop(sh);
+            crate::splash::show(status);
         }
         if with(|a| !a.config.ui.first_run_done) == Some(true) {
             PostMessageW(hwnd, WM_OPEN_SETTINGS, 1, 0);
@@ -473,6 +487,7 @@ impl App {
             add(menu, MF_STRING | check(paused), ID_PAUSE, tr("Пауза", "Pause"));
             add(menu, MF_SEPARATOR, 0, "");
             add(menu, MF_STRING | MF_DEFAULT, ID_SETTINGS, tr("Настройки…", "Settings…"));
+            add(menu, MF_STRING, ID_WIZARD, tr("Мастер первоначальной настройки…", "Setup wizard…"));
             add(menu, MF_STRING, ID_EDIT_CONFIG, tr("Файл настроек", "Settings file"));
             add(menu, MF_STRING, ID_OPEN_FOLDER, tr("Открыть папку программы", "Open data folder"));
 
@@ -546,6 +561,9 @@ impl App {
             }
             ID_SETTINGS => unsafe {
                 PostMessageW(self.hwnd, WM_OPEN_SETTINGS, 0, 0);
+            },
+            ID_WIZARD => unsafe {
+                PostMessageW(self.hwnd, WM_OPEN_SETTINGS, 1, 0);
             },
             ID_EDIT_CONFIG => open("notepad.exe", &format!("\"{}\"", settings::config_path().display())),
             ID_OPEN_FOLDER => open(&settings::data_dir().display().to_string(), ""),

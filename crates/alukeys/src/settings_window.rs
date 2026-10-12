@@ -75,6 +75,9 @@ pub fn open(page: &str, dark: bool) {
             ShowWindow(hwnd, SW_RESTORE);
             SetForegroundWindow(hwnd);
         }
+        if page == "wizard" {
+            send(r#"{"type":"wizard"}"#);
+        }
         return;
     }
     unsafe {

@@ -20,6 +20,8 @@ mod settings_window;
 #[cfg(windows)]
 mod shared;
 #[cfg(windows)]
+mod splash;
+#[cfg(windows)]
 mod tray;
 #[cfg(windows)]
 mod ui_state;
@@ -73,7 +75,9 @@ fn main() {
 
     let (config, error) = settings::load();
     util::set_language(&config.ui.language);
-    app::run(config, error);
+    // No splash when Windows starts us at sign-in, only when the user launches the app.
+    let splash = !std::env::args().any(|a| a == "--autostart");
+    app::run(config, error, splash);
     log!("exit");
 }
 
