@@ -56,6 +56,8 @@ Built for the Apple Wireless Keyboard A1314 (the aluminium one from the 2009–2
 
 The binaries are not signed yet, so SmartScreen may warn: More info → Run anyway.
 
+Turning on start with Windows copies AluKeys to `%LOCALAPPDATA%\Programs\AluKeys` and starts it from there, so the downloaded folder can be deleted. Running a newer version from anywhere updates that copy.
+
 For a portable setup, put an empty file named `portable` next to the exe.
 
 ## Troubleshooting

@@ -154,16 +154,18 @@ fn data(hwnd: HWND) -> NOTIFYICONDATAW {
     nid
 }
 
-pub fn add(hwnd: HWND, icon: HICON, tip: &str) {
+/// Adds the icon; false while the taskbar is not ready yet (early at sign-in).
+pub fn add(hwnd: HWND, icon: HICON, tip: &str) -> bool {
     let mut nid = data(hwnd);
     nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP | NIF_SHOWTIP;
     nid.uCallbackMessage = WM_TRAY;
     nid.hIcon = icon;
     copy_wide(&mut nid.szTip, tip);
     unsafe {
-        Shell_NotifyIconW(NIM_ADD, &nid);
+        let ok = Shell_NotifyIconW(NIM_ADD, &nid) != 0;
         nid.Anonymous.uVersion = NOTIFYICON_VERSION_4;
         Shell_NotifyIconW(NIM_SETVERSION, &nid);
+        ok
     }
 }
 

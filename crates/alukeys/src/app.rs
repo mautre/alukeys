@@ -32,6 +32,9 @@ use crate::{engine_thread, log, settings, ui_state};
 const TIMER_CONFIG: usize = 1;
 const TIMER_BATTERY: usize = 2;
 const TIMER_BATTERY_SOON: usize = 3;
+const TIMER_TRAY: usize = 4;
+/// The autostart entry is stale and could not be fixed without a UAC prompt.
+const WM_AUTOSTART_BROKEN: u32 = WM_APP + 32;
 const BATTERY_POLL_MS: u32 = 10 * 60 * 1000;
 
 /// Posted by a second instance to bring up the settings.
@@ -130,7 +133,17 @@ pub fn run(config: Config, config_error: Option<String>, splash: bool) {
         let iso = engine_thread::is_iso();
         let elevated = autostart::is_elevated();
         let icon = tray::make_icon(Look::Normal);
-        tray::add(hwnd, icon, "AluKeys");
+        // At sign-in the taskbar may not exist yet; keep trying for a minute.
+        if !tray::add(hwnd, icon, "AluKeys") {
+            log!("ui: taskbar not ready, retrying tray icon");
+            SetTimer(hwnd, TIMER_TRAY, 2000, None);
+        }
+        let ui = Hwnd(hwnd as usize);
+        std::thread::spawn(move || {
+            if !autostart::heal() {
+                PostMessageW(ui.get(), WM_AUTOSTART_BROKEN, 0, 0);
+            }
+        });
         WTSRegisterSessionNotification(hwnd, NOTIFY_FOR_THIS_SESSION);
         SetTimer(hwnd, TIMER_CONFIG, 1000, None);
         SetTimer(hwnd, TIMER_BATTERY, BATTERY_POLL_MS, None);
@@ -729,6 +742,20 @@ unsafe extern "system" fn wnd_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam:
             with(|a| a.on_device_changed(false));
             0
         }
+        WM_AUTOSTART_BROKEN => {
+            with(|a| {
+                tray::notify(
+                    a.hwnd,
+                    tr("Автозапуск нужно обновить", "Startup needs updating"),
+                    tr(
+                        "Автозапуск указывает на удалённую копию программы. Меню в трее → «Запуск вместе с Windows» → выберите режим ещё раз.",
+                        "Startup points to a deleted copy of AluKeys. Tray menu → Start with Windows → choose the mode again.",
+                    ),
+                    true,
+                )
+            });
+            0
+        }
         WM_TIMER => {
             match wparam {
                 TIMER_CONFIG => {
@@ -739,6 +766,15 @@ unsafe extern "system" fn wnd_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam:
                     worker::submit(Job::Battery);
                 }
                 TIMER_BATTERY if shared().device.connected => worker::submit(Job::Battery),
+                TIMER_TRAY => {
+                    use std::sync::atomic::{AtomicU32, Ordering as O};
+                    static TRIES: AtomicU32 = AtomicU32::new(0);
+                    let added = with(|a| tray::add(a.hwnd, a.icon, &a.tooltip())).unwrap_or(false);
+                    if added || TRIES.fetch_add(1, O::Relaxed) > 30 {
+                        unsafe { KillTimer(hwnd, TIMER_TRAY) };
+                        log!("ui: tray icon {}", if added { "added" } else { "gave up" });
+                    }
+                }
                 _ => {}
             }
             0
@@ -770,7 +806,7 @@ unsafe extern "system" fn wnd_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam:
             if taskbar != 0 && msg == taskbar {
                 // Explorer restarted: put the icon back.
                 with(|a| {
-                    tray::add(a.hwnd, a.icon, &a.tooltip());
+                    let _ = tray::add(a.hwnd, a.icon, &a.tooltip());
                 });
                 return 0;
             }
